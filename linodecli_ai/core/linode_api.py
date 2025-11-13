@@ -21,7 +21,14 @@ class LinodeAPI:
         if not token or client is None:
             raise LinodeAPIError("Plugin context missing Linode CLI client or token")
 
-        self._base_url = getattr(client, "base_url", "https://api.linode.com/v4").rstrip("/")
+        spec_base_url = getattr(client, "ops", {}).get("_base_url") if getattr(client, "ops", None) else None
+        if spec_base_url:
+            base_url = spec_base_url
+        else:
+            base_url = getattr(client, "base_url", "https://api.linode.com/v4")
+            if not base_url.rstrip("/").endswith("/v4"):
+                base_url = base_url.rstrip("/") + "/v4"
+        self._base_url = base_url.rstrip("/")
         self._session = requests.Session()
         self._session.headers.update(
             {
