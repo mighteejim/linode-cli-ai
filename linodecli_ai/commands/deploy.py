@@ -1,0 +1,182 @@
+"""Implementation for `linode-cli ai deploy`."""
+
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import time
+import uuid
+from pathlib import Path
+from typing import Dict
+from urllib import error as url_error
+from urllib import request as url_request
+
+from ..core import cloud_init
+from ..core import env as env_core
+from ..core import linode_api
+from ..core import project
+from ..core import registry
+from ..core import templates as template_core
+
+
+def register(subparsers: argparse._SubParsersAction, config) -> None:
+    parser = subparsers.add_parser("deploy", help="Deploy current project to Linode")
+    parser.add_argument("--region", help="Override region for the Linode")
+    parser.add_argument("--linode-type", help="Override Linode type/plan")
+    parser.add_argument("--env-file", help="Override env file path")
+    parser.add_argument("--image", help="Override container image")
+    parser.add_argument("--app-name", help="Override app name for tagging")
+    parser.add_argument("--env", dest="env_name", help="Override environment name")
+    parser.add_argument(
+        "--wait",
+        action="store_true",
+        help="Wait for Linode to reach running state and perform health check",
+    )
+    parser.set_defaults(func=lambda args: _cmd_deploy(args, config))
+
+
+def _cmd_deploy(args, config) -> None:
+    manifest = project.load_manifest()
+    template_name = manifest.get("template", {}).get("name")
+    if not template_name:
+        raise project.ProjectManifestError("Manifest missing template.name")
+    template = template_core.load_template(template_name)
+    linode_cfg = template.data.get("deploy", {}).get("linode", {})
+    container_cfg = linode_cfg.get("container", {})
+
+    region = args.region or manifest.get("deploy", {}).get("region") or linode_cfg.get("region_default")
+    linode_type = (
+        args.linode_type or manifest.get("deploy", {}).get("linode_type") or linode_cfg.get("type_default")
+    )
+    app_name = args.app_name or manifest.get("deploy", {}).get("app_name") or template.name
+    env_name = args.env_name or manifest.get("deploy", {}).get("env") or "default"
+    container_image = args.image or container_cfg.get("image")
+
+    if not region or not linode_type or not container_image:
+        raise RuntimeError("Region, Linode type, and container image must be defined.")
+
+    env_file = args.env_file or manifest.get("env", {}).get("file") or ".env"
+    env_values = _read_env_file(env_file, template)
+    template_env = container_cfg.get("env", {})
+    merged_env = {**template_env, **env_values}
+    merged_env["BUILD_AI_APP_NAME"] = app_name
+    merged_env["BUILD_AI_ENV"] = env_name
+
+    internal_port = int(container_cfg.get("internal_port") or 8000)
+    external_port = int(container_cfg.get("external_port") or 80)
+
+    config_obj = cloud_init.CloudInitConfig(
+        container_image=container_image,
+        internal_port=internal_port,
+        external_port=external_port,
+        env_vars=merged_env,
+        post_start_script=container_cfg.get("post_start_script"),
+    )
+    user_data = cloud_init.generate_cloud_init(config_obj)
+
+    api = linode_api.LinodeAPI(config)
+    deployment_id = str(uuid.uuid4())
+    timestamp = dt.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    label = f"build-ai-{app_name}-{env_name}-{timestamp}"
+    tags = [
+        f"build_ai_app={app_name}",
+        f"build_ai_env={env_name}",
+        f"build_ai_template={template.name}",
+        f"build_ai_template_version={template.version}",
+        f"build_ai_deployment_id={deployment_id}",
+    ]
+
+    base_image = linode_cfg.get("image", "linode/ubuntu22.04")
+    print(f"Creating Linode {linode_type} in {region} (image: {base_image})...")
+    instance = api.create_instance(
+        region=region,
+        linode_type=linode_type,
+        image=base_image,
+        label=label,
+        tags=tags,
+        user_data=user_data,
+    )
+    linode_id = instance["id"]
+    ipv4 = _primary_ipv4(instance)
+    hostname = api.derive_hostname(ipv4)
+
+    record = {
+        "deployment_id": deployment_id,
+        "app_name": app_name,
+        "env": env_name,
+        "template": template.name,
+        "template_version": template.version,
+        "target": "linode",
+        "region": region,
+        "linode_type": linode_type,
+        "linode_id": linode_id,
+        "ipv4": ipv4,
+        "hostname": hostname,
+        "health": container_cfg.get("health"),
+        "external_port": external_port,
+        "internal_port": internal_port,
+        "created_at": dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "last_status": instance.get("status"),
+    }
+    registry.add_deployment(record)
+
+    if args.wait:
+        print("Waiting for Linode to reach running state...")
+        instance = api.wait_for_status(linode_id, desired="running")
+        record["last_status"] = instance.get("status")
+        registry.update_fields(deployment_id, {"last_status": record["last_status"]})
+        health_cfg = container_cfg.get("health")
+        if health_cfg and health_cfg.get("type") == "http":
+            _perform_http_health_check(hostname, health_cfg)
+
+    print("")
+    print(f"Deployed {template.display_name} (app: {app_name}, env: {env_name})")
+    print(f"Linode ID: {linode_id}")
+    print(f"IPv4:      {ipv4}")
+    print(f"Hostname:  {hostname}")
+
+
+def _read_env_file(path: str, template) -> Dict[str, str]:
+    env_path = Path(path)
+    requirements = [
+        env_core.EnvRequirement(name=item.get("name"), description=item.get("description", ""))
+        for item in template.data.get("env", {}).get("required", [])
+    ]
+    if not env_path.exists():
+        if requirements:
+            raise env_core.EnvError(f"Missing env file {path} required for template.")
+        return {}
+    env_values = env_core.load_env_file(str(env_path))
+    env_core.ensure_required(env_values, requirements)
+    return env_values
+
+
+def _primary_ipv4(instance: Dict) -> str:
+    ipv4_list = instance.get("ipv4") or []
+    if isinstance(ipv4_list, list) and ipv4_list:
+        return ipv4_list[0]
+    raise linode_api.LinodeAPIError("Instance response missing IPv4 address.")
+
+
+def _perform_http_health_check(hostname: str, health_cfg: Dict) -> None:
+    path = health_cfg.get("path", "/")
+    port = health_cfg.get("port", 80)
+    url = f"http://{hostname}:{port}{path}"
+    retries = int(health_cfg.get("max_retries", 30))
+    delay = int(health_cfg.get("initial_delay_seconds", 5))
+    timeout = int(health_cfg.get("timeout_seconds", 3))
+    success_codes = health_cfg.get("success_codes", [200])
+
+    print(f"Checking HTTP health at {url} ...")
+    for attempt in range(1, retries + 1):
+        try:
+            req = url_request.Request(url, method="GET")
+            with url_request.urlopen(req, timeout=timeout) as resp:
+                if resp.getcode() in success_codes:
+                    print("Health check passed.")
+                    return
+        except url_error.URLError:
+            pass
+        print(f"Attempt {attempt}/{retries} failed; retrying in {delay}s...")
+        time.sleep(delay)
+    raise RuntimeError("Health check failed after maximum retries.")

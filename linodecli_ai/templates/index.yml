@@ -1,0 +1,7 @@
+templates:
+  - name: chat-agent
+    path: templates/chat-agent/template.yml
+  - name: llm-api
+    path: templates/llm-api/template.yml
+  - name: vision-yolo
+    path: templates/vision-yolo/template.yml

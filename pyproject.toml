@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "linodecli-ai"
+version = "0.1.0"
+description = "linode-cli plugin for deploying AI demo apps"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "Linode", email = "support@linode.com" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/linode/linode-cli-ai"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["linodecli_ai*"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"linodecli_ai" = ["templates/**/*.yml"]

@@ -1,0 +1,39 @@
+name: vision-yolo
+display_name: Vision YOLO
+version: 0.1.0
+
+description: >
+  Computer vision demo using Ultralytics YOLO server with a REST API for object
+  detection requests.
+
+deploy:
+  target: linode
+  linode:
+    image: linode/ubuntu22.04
+    region_default: eu-fr
+    type_default: g1-small
+    tags:
+      - ai
+      - vision
+      - yolo
+    container:
+      image: ultralytics/ultralytics:latest
+      internal_port: 8000
+      external_port: 80
+      env:
+        UVICORN_HOST: 0.0.0.0
+        UVICORN_PORT: "8000"
+      health:
+        type: http
+        path: /docs
+        port: 8000
+        success_codes: [200]
+        initial_delay_seconds: 15
+        timeout_seconds: 3
+        max_retries: 30
+
+env:
+  required: []
+  optional:
+    - name: YOLO_MODEL
+      description: Override the model name pulled on startup.

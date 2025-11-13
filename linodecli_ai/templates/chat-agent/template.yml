@@ -1,0 +1,39 @@
+name: chat-agent
+display_name: Chat Agent
+version: 0.1.0
+
+description: >
+  Basic LLM chat agent using the public Ollama container. Provisions a single
+  Linode, installs Docker via cloud-init, and runs `ollama/ollama:latest`.
+
+deploy:
+  target: linode
+  linode:
+    image: linode/ubuntu22.04
+    region_default: us-chi
+    type_default: g1-small
+    tags:
+      - ai
+      - chat
+      - ollama
+    container:
+      image: ollama/ollama:latest
+      internal_port: 11434
+      external_port: 80
+      post_start_script: |
+        #!/bin/bash
+        docker exec app ollama pull llama3
+      health:
+        type: http
+        path: /api/tags
+        port: 11434
+        success_codes: [200]
+        initial_delay_seconds: 10
+        timeout_seconds: 2
+        max_retries: 30
+
+env:
+  required: []
+  optional:
+    - name: OLLAMA_MODELS
+      description: Comma separated models to pre-load, e.g. llama3
