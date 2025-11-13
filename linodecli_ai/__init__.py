@@ -18,9 +18,7 @@ def call(args, context):
     """Entrypoint invoked by linode-cli when running `linode-cli ai`."""
     parser = argparse.ArgumentParser(prog="linode-cli ai")
     plugin_core.inherit_plugin_args(parser)
-    subparsers = parser.add_subparsers(dest="command")
-
-    base.register_ai_plugin(subparsers, context)
+    base.register_root_parser(parser, context)
 
     parsed_args = parser.parse_args(args)
     func = getattr(parsed_args, "func", None)
