@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import re
 import time
 import uuid
 from pathlib import Path
@@ -76,15 +77,9 @@ def _cmd_deploy(args, config) -> None:
 
     api = linode_api.LinodeAPI(config)
     deployment_id = str(uuid.uuid4())
-    timestamp = dt.datetime.utcnow().strftime("%Y%m%d%H%M%S")
-    label = f"build-ai-{app_name}-{env_name}-{timestamp}"
-    tags = [
-        f"build_ai_app={app_name}",
-        f"build_ai_env={env_name}",
-        f"build_ai_template={template.name}",
-        f"build_ai_template_version={template.version}",
-        f"build_ai_deployment_id={deployment_id}",
-    ]
+    timestamp = dt.datetime.utcnow().strftime("%m%d%H%M")
+    label = _build_label(app_name, env_name, timestamp)
+    tags = _build_tags(app_name, env_name, template, deployment_id)
 
     base_image = linode_cfg.get("image", "linode/ubuntu22.04")
     print(f"Creating Linode {linode_type} in {region} (image: {base_image})...")
@@ -180,3 +175,34 @@ def _perform_http_health_check(hostname: str, health_cfg: Dict) -> None:
         print(f"Attempt {attempt}/{retries} failed; retrying in {delay}s...")
         time.sleep(delay)
     raise RuntimeError("Health check failed after maximum retries.")
+
+
+_SAFE_CHAR_PATTERN = re.compile(r"[^A-Za-z0-9_.-]")
+
+
+def _slugify(value: str, max_length: int) -> str:
+    text = _SAFE_CHAR_PATTERN.sub("-", value)
+    text = re.sub("-+", "-", text).strip("-")
+    text = text or "x"
+    return text[:max_length]
+
+
+def _build_label(app_name: str, env_name: str, timestamp: str) -> str:
+    base = f"ai-{_slugify(app_name, 10)}-{_slugify(env_name, 6)}-{timestamp}"
+    return base[:32]
+
+
+def _build_tag(prefix: str, value: str) -> str:
+    max_value_len = max(1, 50 - len(prefix) - 1)
+    safe_value = _slugify(value, max_value_len)
+    return f"{prefix}:{safe_value}"
+
+
+def _build_tags(app_name: str, env_name: str, template, deployment_id: str):
+    return [
+        _build_tag("ai-app", app_name),
+        _build_tag("ai-env", env_name),
+        _build_tag("ai-tmpl", template.name),
+        _build_tag("ai-tver", template.version),
+        _build_tag("ai-deploy", deployment_id[:12]),
+    ]
