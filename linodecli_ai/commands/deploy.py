@@ -25,7 +25,14 @@ def register(subparsers: argparse._SubParsersAction, config) -> None:
     parser.add_argument("--region", help="Override region for the Linode")
     parser.add_argument("--linode-type", help="Override Linode type/plan")
     parser.add_argument("--env-file", help="Override env file path")
-    parser.add_argument("--image", help="Override container image")
+    parser.add_argument(
+        "--image",
+        help="Override the Linode disk image (e.g., linode/ubuntu24.04)",
+    )
+    parser.add_argument(
+        "--container-image",
+        help="Override the container image defined by the template",
+    )
     parser.add_argument("--app-name", help="Override app name for tagging")
     parser.add_argument("--env", dest="env_name", help="Override environment name")
     parser.add_argument("--root-pass", help="Root password to use for the Linode. If omitted, a secure password is generated and saved locally.")
@@ -52,7 +59,11 @@ def _cmd_deploy(args, config) -> None:
     )
     app_name = args.app_name or manifest.get("deploy", {}).get("app_name") or template.name
     env_name = args.env_name or manifest.get("deploy", {}).get("env") or "default"
-    container_image = args.image or container_cfg.get("image")
+    container_image = (
+        args.container_image
+        or manifest.get("deploy", {}).get("container_image")
+        or container_cfg.get("image")
+    )
 
     if not region or not linode_type or not container_image:
         raise RuntimeError("Region, Linode type, and container image must be defined.")
@@ -84,7 +95,12 @@ def _cmd_deploy(args, config) -> None:
     label = _build_label(app_name, env_name, timestamp)
     tags = _build_tags(app_name, env_name, template, deployment_id)
 
-    base_image = linode_cfg.get("image", "linode/ubuntu24.04")
+    base_image = (
+        args.image
+        or manifest.get("deploy", {}).get("base_image")
+        or linode_cfg.get("image")
+        or "linode/ubuntu24.04"
+    )
     print(f"Creating Linode {linode_type} in {region} (image: {base_image})...")
     instance = api.create_instance(
         region=region,

@@ -173,7 +173,7 @@ env:
   file: .env
 ```
 
-#### 3.2.4 `linode-cli ai deploy [--region REGION] [--linode-type TYPE] [--env-file PATH] [--image IMAGE] [--app-name NAME] [--env ENV]`
+#### 3.2.4 `linode-cli ai deploy [--region REGION] [--linode-type TYPE] [--env-file PATH] [--image IMAGE] [--container-image IMAGE] [--app-name NAME] [--env ENV]`
 
 - Deploys the current project (based on `ai.linode.yml` and template definition).
 - Must be run **inside** a project directory (where `ai.linode.yml` exists).
@@ -190,7 +190,8 @@ Behavior:
    - Linode type: `--linode-type` or project or template default.
    - App name: `--app-name` or project default.
    - Env name: `--env` or `default`.
-   - Container image: `--image` or template container image.
+   - Linode image: `--image` or project/template default (`linode/ubuntu24.04` fallback).
+   - Container image: `--container-image` or template container image.
 5. Generate **cloud-init** user data via `core/cloud_init.py`.
 6. Call **Linode API** to create a new Linode with:
    - Region, type, base image (e.g. `linode/ubuntu24.04`).
