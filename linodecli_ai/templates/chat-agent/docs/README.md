@@ -10,7 +10,7 @@ and runs an optional post-start hook to preload a model.
 | --- | --- |
 | Base image | `linode/ubuntu22.04` |
 | Region (default) | `us-chi` |
-| Linode type (default) | `g1-small` |
+| Linode type (default) | `g6-standard-2` |
 | Container image | `ollama/ollama:latest` |
 | External port | `80` (forwarded to `11434`) |
 | Health check | `http://<hostname>:11434/api/tags` |
@@ -32,7 +32,7 @@ the container’s environment.
 linode-cli ai init chat-agent --directory chat-demo
 cd chat-demo
 cp .env.example .env  # add OLLAMA_MODELS if desired
-linode-cli ai deploy --region us-chi --linode-type g1-small --wait
+linode-cli ai deploy --region us-chi --linode-type g6-standard-2 --wait
 linode-cli ai status
 ```
 

@@ -19,7 +19,7 @@ via `linode-cli ai init <template>` contains:
    ```
 2. Deploy:
    ```bash
-   linode-cli ai deploy --region us-chi --linode-type g1-small --wait
+   linode-cli ai deploy --region us-chi --linode-type g6-standard-2 --wait
    ```
 3. Inspect:
    ```bash
@@ -40,7 +40,7 @@ template:
   version: 0.1.0
 deploy:
   region: us-chi
-  linode_type: g1-small
+  linode_type: g6-standard-2
   app_name: chat-agent
   env: default
 env:

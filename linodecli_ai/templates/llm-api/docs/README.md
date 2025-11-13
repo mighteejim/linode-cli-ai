@@ -9,7 +9,7 @@ to expose an OpenAI-compatible HTTP endpoint backed by vLLM.
 | --- | --- |
 | Base image | `linode/ubuntu22.04` |
 | Region (default) | `us-mia` |
-| Linode type (default) | `g1-medium` |
+| Linode type (default) | `g6-standard-8` |
 | Container image | `vllm/vllm-openai:latest` |
 | External port | `80` (forwarded to `8000`) |
 | Health check | `http://<hostname>:8000/health` |
@@ -31,7 +31,7 @@ linode-cli ai init llm-api --directory llm-demo
 cd llm-demo
 cp .env.example .env
 echo "HF_TOKEN=hf_xxx" >> .env
-linode-cli ai deploy --region us-mia --linode-type g1-medium --wait
+linode-cli ai deploy --region us-mia --linode-type g6-standard-8 --wait
 linode-cli ai status
 ```
 

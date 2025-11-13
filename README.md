@@ -47,7 +47,7 @@ linode-cli ai templates list
 linode-cli ai init chat-agent --directory my-agent
 cd my-agent
 cp .env.example .env   # fill in required values if any
-linode-cli ai deploy --region us-chi --linode-type g1-small --wait
+linode-cli ai deploy --region us-chi --linode-type g6-standard-2 --wait
 linode-cli ai status
 linode-cli ai destroy --app chat-agent --env default
 ```

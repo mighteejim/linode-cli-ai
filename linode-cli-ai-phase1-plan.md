@@ -166,7 +166,7 @@ template:
   version: 0.1.0
 deploy:
   region: us-chi
-  linode_type: g1-small
+  linode_type: g6-standard-2
   app_name: chat-agent
   env: default
 env:
@@ -317,7 +317,7 @@ deploy:
 
   linode:
     region_default: us-chi
-    type_default: g1-small
+    type_default: g6-standard-2
 
     container:
       image: ollama/ollama:latest
@@ -364,7 +364,7 @@ template:
 
 deploy:
   region: us-chi
-  linode_type: g1-small
+  linode_type: g6-standard-2
   app_name: chat-agent
   env: default
 
@@ -574,7 +574,7 @@ A Phase 1 prototype is “done” when all of this works:
 4. Deploy:
    ```bash
    cp .env.example .env  # if applicable
-   linode-cli ai deploy --region us-chi --linode-type g1-small
+   linode-cli ai deploy --region us-chi --linode-type g6-standard-2
    ```
    → Creates a Linode, runs the public container, writes registry.
 5. Check status:

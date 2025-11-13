@@ -31,7 +31,7 @@ def _cmd_list(_args):
             (
                 template.name,
                 template.version,
-                textwrap.shorten(template.description, width=60, placeholder="..."),
+                template.description.strip().replace("\n", " "),
             )
         )
 
