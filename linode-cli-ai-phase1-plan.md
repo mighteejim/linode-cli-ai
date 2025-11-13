@@ -347,7 +347,7 @@ Add at least 2–3 templates of this form for demonstration:
 
 - `chat-agent` (Ollama)
 - `llm-api` (vLLM or TGI)
-- `vision-yolo` (Ultralytics YOLO)
+- `embeddings-bert` (Hugging Face TEI for embeddings)
 
 ---
 

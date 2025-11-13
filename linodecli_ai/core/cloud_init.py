@@ -15,6 +15,7 @@ class CloudInitConfig:
     external_port: int
     env_vars: Dict[str, str] = field(default_factory=dict)
     post_start_script: Optional[str] = None
+    command: Optional[str] = None
 
 
 def generate_cloud_init(config: CloudInitConfig) -> str:
@@ -71,8 +72,13 @@ def _render_start_script(config: CloudInitConfig) -> str:
         "  --restart unless-stopped \\",
         "  --env-file /etc/build-ai.env \\",
         "  -p ${EXTERNAL_PORT}:${INTERNAL_PORT} \\",
-        "  \"$IMAGE\"",
     ]
+    image_line = "  \"$IMAGE\""
+    if config.command:
+        lines.append(image_line + " \\")
+        lines.append(f"  {config.command}")
+    else:
+        lines.append(image_line)
 
     if config.post_start_script:
         lines.extend(

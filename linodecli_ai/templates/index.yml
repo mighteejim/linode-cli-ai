@@ -3,5 +3,5 @@ templates:
     path: templates/chat-agent/template.yml
   - name: llm-api
     path: templates/llm-api/template.yml
-  - name: vision-yolo
-    path: templates/vision-yolo/template.yml
+  - name: embeddings-bert
+    path: templates/embeddings-bert/template.yml

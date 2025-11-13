@@ -73,6 +73,7 @@ def _cmd_deploy(args, config) -> None:
         external_port=external_port,
         env_vars=merged_env,
         post_start_script=container_cfg.get("post_start_script"),
+        command=container_cfg.get("command"),
     )
     user_data = cloud_init.generate_cloud_init(config_obj)
 
