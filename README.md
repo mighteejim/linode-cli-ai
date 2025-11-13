@@ -53,3 +53,8 @@ linode-cli ai destroy --app chat-agent --env default
 ```
 
 Deployments are tracked locally at `~/.config/linode-cli/ai-deployments.json`, which allows the `status` and `destroy` commands to operate without additional inputs.
+
+## Further Reading
+
+- `docs/template-deployments.md` – End-to-end overview of how manifests, env files, and deployments fit together.
+- `linodecli_ai/templates/<template>/docs/README.md` – Template-specific notes (environment variables, ports, usage examples).
