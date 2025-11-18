@@ -193,10 +193,16 @@ def _render_start_script(config: CloudInitConfig) -> str:
         "",
         "docker pull \"$IMAGE\"",
         "docker rm -f \"$CONTAINER_NAME\" >/dev/null 2>&1 || true",
+        "",
+        "# Source env file for variable expansion in command",
+        "set -a",
+        ". /etc/build-ai.env",
+        "set +a",
     ]
     
     # Build docker run command with GPU support if needed
     docker_run_lines = [
+        "",
         "docker run -d \\",
         "  --name \"$CONTAINER_NAME\" \\",
         "  --restart unless-stopped \\",
