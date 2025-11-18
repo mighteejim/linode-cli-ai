@@ -22,7 +22,7 @@ deploy:
       internal_port: 8000
       external_port: 80
       requires_gpu: true
-      command: --model ${MODEL_NAME:-meta-llama/Meta-Llama-3-8B-Instruct}${MAX_MODEL_LEN:+ --max-model-len }${MAX_MODEL_LEN}
+      command: --model ${MODEL_NAME:-meta-llama/Meta-Llama-3-8B-Instruct} ${MAX_MODEL_LEN:+--max-model-len ${MAX_MODEL_LEN}}
       env:
         MODEL_NAME: meta-llama/Meta-Llama-3-8B-Instruct
         HUGGING_FACE_HUB_TOKEN: ${HF_TOKEN}
@@ -41,9 +41,17 @@ env:
       description: Hugging Face token to download gated models.
   optional:
     - name: MODEL_NAME
-      description: HuggingFace model to load (default meta-llama/Meta-Llama-3-8B-Instruct).
+      description: |
+        HuggingFace model to load. Popular options:
+        - microsoft/Phi-3-mini-4k-instruct (context: 4k)
+        - mistralai/Mistral-7B-Instruct-v0.3 (context: 32k)
+        - Qwen/Qwen2.5-7B-Instruct (context: 8k)
+        - meta-llama/Meta-Llama-3-8B-Instruct (context: 8k, requires HF access)
     - name: MAX_MODEL_LEN
-      description: Maximum model context length (default auto-detected from model config).
+      description: |
+        Maximum context length in tokens. If not set, auto-detected from model.
+        Common values: 4096, 8192, 16384, 32768
+        Set this if you want to limit context below the model's maximum.
     - name: VLLM_GPU_MEMORY_UTILIZATION
       description: GPU memory utilization fraction (default 0.9).
 

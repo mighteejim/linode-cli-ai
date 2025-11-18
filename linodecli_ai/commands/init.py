@@ -100,14 +100,36 @@ def _ensure_can_write(path: Path) -> None:
 def _render_env_example(template) -> List[str]:
     env_cfg = template.data.get("env", {})
     lines: List[str] = []
-    for item in env_cfg.get("required", []):
-        name = item.get("name")
-        lines.append(f"{name}=")
-    for item in env_cfg.get("optional", []):
-        name = item.get("name")
-        lines.append(f"# Optional: {name}=")
+    
+    # Add required variables
+    required = env_cfg.get("required", [])
+    if required:
+        lines.append("# Required environment variables")
+        for item in required:
+            name = item.get("name")
+            desc = item.get("description", "")
+            if desc:
+                lines.append(f"# {desc}")
+            lines.append(f"{name}=")
+            lines.append("")
+    
+    # Add optional variables
+    optional = env_cfg.get("optional", [])
+    if optional:
+        if required:
+            lines.append("")
+        lines.append("# Optional environment variables")
+        for item in optional:
+            name = item.get("name")
+            desc = item.get("description", "")
+            if desc:
+                lines.append(f"# {desc}")
+            lines.append(f"# {name}=")
+            lines.append("")
+    
     if not lines:
         lines.append("# No environment variables required for this template.")
+    
     return lines
 
 
