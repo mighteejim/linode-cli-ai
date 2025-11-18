@@ -32,7 +32,7 @@ When you deploy this template, cloud-init automatically:
 | --- | --- | --- |
 | `HF_TOKEN` | **Yes** | Hugging Face token with access to the model you want to deploy. |
 | `MODEL_NAME` | No | HuggingFace model to load (default: `meta-llama/Meta-Llama-3-8B-Instruct`). |
-| `MAX_MODEL_LEN` | No | Maximum model context length (default: `16384`). |
+| `MAX_MODEL_LEN` | No | Maximum model context length. If not set, vLLM auto-detects from the model's config. |
 | `VLLM_GPU_MEMORY_UTILIZATION` | No | GPU memory utilization fraction (default: `0.9`). |
 
 ### Popular Models
@@ -41,16 +41,16 @@ You can override `MODEL_NAME` in your `.env` file to use different models:
 
 ```bash
 # Open-source alternatives that don't require gating
-MODEL_NAME=microsoft/Phi-3-mini-4k-instruct
-MODEL_NAME=mistralai/Mistral-7B-Instruct-v0.3
-MODEL_NAME=Qwen/Qwen2.5-7B-Instruct
+MODEL_NAME=microsoft/Phi-3-mini-4k-instruct     # Context: 4k
+MODEL_NAME=mistralai/Mistral-7B-Instruct-v0.3   # Context: 32k
+MODEL_NAME=Qwen/Qwen2.5-7B-Instruct             # Context: 8k
 
 # Gated models (require HF access approval)
-MODEL_NAME=meta-llama/Meta-Llama-3-8B-Instruct
-MODEL_NAME=meta-llama/Meta-Llama-3-70B-Instruct
+MODEL_NAME=meta-llama/Meta-Llama-3-8B-Instruct  # Context: 8k
+MODEL_NAME=meta-llama/Meta-Llama-3-70B-Instruct # Context: 8k
 ```
 
-**Note:** Larger models (13B+) require larger instance types with more GPU memory.
+**Note:** vLLM automatically detects each model's maximum context length. You typically don't need to set `MAX_MODEL_LEN` unless you want to limit it below the model's maximum.
 
 ## Usage
 
