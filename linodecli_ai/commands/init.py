@@ -55,7 +55,21 @@ def _cmd_init(args):
         readme_content = _render_readme(template)
         readme_path.write_text(readme_content, encoding="utf-8")
 
-    print(f"Initialized {template.display_name} in {target_dir}")
+    print(f"✓ Initialized {template.display_name} in {target_dir}")
+    print()
+    
+    # Print guidance if available
+    guidance = template.data.get("guidance", {})
+    if guidance.get("summary"):
+        print("Next steps:")
+        print("  1. Copy .env.example to .env and fill in required values")
+        print("  2. Run: linode-cli ai deploy")
+        print()
+        print(guidance["summary"])
+    else:
+        print("Next steps:")
+        print("  1. Copy .env.example to .env and fill in required values")
+        print("  2. Run: linode-cli ai deploy")
 
 
 def _resolve_directory(directory: str | None) -> Path:
