@@ -100,6 +100,7 @@ That's it! Your LLM API is now running on Linode with GPU support.
 | **chat-agent** | Ollama-based chat agent with Llama 3 | ✅ |
 | **llm-api** | vLLM text generation API (OpenAI-compatible) | ✅ |
 | **embeddings-python** | Sentence-transformers embeddings server | ❌ |
+| **ml-pipeline** | Production ML inference with batching, caching & monitoring | ✅ |
 
 ---
 
