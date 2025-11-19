@@ -176,7 +176,7 @@ def _render_start_script(config: CloudInitConfig) -> str:
         "set -a",
         ". /etc/build.env",
         "set +a",
-    ]
+    ])
     
     # Build docker run command
     docker_run_lines = [
