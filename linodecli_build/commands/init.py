@@ -284,30 +284,83 @@ def _interactive_configure(config, deploy_data: dict) -> dict:
 
 
 def _select_region(regions, default: str) -> str:
-    """Interactive region selection."""
+    """Interactive region selection grouped by geography."""
     import sys
     
-    # Sort regions by ID
-    sorted_regions = sorted(regions, key=lambda r: r.get('id', ''))
+    # Geographic groupings based on country codes
+    geo_groups = {
+        'Americas': ['us', 'ca'],
+        'South America': ['br', 'cl', 'ar'],
+        'Europe': ['gb', 'uk', 'de', 'fr', 'nl', 'se', 'it', 'es', 'pl'],
+        'Asia': ['jp', 'sg', 'in', 'id', 'kr', 'ae'],
+        'Oceania': ['au', 'nz']
+    }
+    
+    # Group regions by geography
+    grouped = {geo: [] for geo in geo_groups}
+    other = []
+    
+    for region in regions:
+        region_id = region.get('id', '')
+        country_code = region_id.split('-')[0] if '-' in region_id else ''
+        
+        placed = False
+        for geo, codes in geo_groups.items():
+            if country_code in codes:
+                grouped[geo].append(region)
+                placed = True
+                break
+        
+        if not placed:
+            other.append(region)
+    
+    # Build ordered list of all regions
+    all_regions = []
     
     print()
     print("Available Regions:")
-    print("-" * 60)
+    print("=" * 70)
     
-    # Display regions in a compact format
-    for i, region in enumerate(sorted_regions, 1):
-        region_id = region.get('id', 'unknown')
-        label = region.get('label', region_id)
-        status = region.get('status', 'unknown')
-        status_icon = "✓" if status == "ok" else "✗"
-        default_marker = " (default)" if region_id == default else ""
-        print(f"{i:3}. {status_icon} {region_id:20} - {label}{default_marker}")
+    # Display each geographic group
+    for geo in ['Americas', 'Europe', 'Asia', 'South America', 'Oceania']:
+        group_regions = sorted(grouped[geo], key=lambda r: r.get('id', ''))
+        if not group_regions:
+            continue
+            
+        print()
+        print(f"{geo}:")
+        print("-" * 70)
+        
+        for region in group_regions:
+            region_id = region.get('id', 'unknown')
+            label = region.get('label', region_id)
+            status = region.get('status', 'unknown')
+            status_icon = "✓" if status == "ok" else "✗"
+            default_marker = " (default)" if region_id == default else ""
+            idx = len(all_regions) + 1
+            all_regions.append(region)
+            print(f"{idx:3}. {status_icon} {region_id:20} - {label}{default_marker}")
     
-    print("-" * 60)
+    # Display other regions if any
+    if other:
+        print()
+        print("Other:")
+        print("-" * 70)
+        for region in sorted(other, key=lambda r: r.get('id', '')):
+            region_id = region.get('id', 'unknown')
+            label = region.get('label', region_id)
+            status = region.get('status', 'unknown')
+            status_icon = "✓" if status == "ok" else "✗"
+            default_marker = " (default)" if region_id == default else ""
+            idx = len(all_regions) + 1
+            all_regions.append(region)
+            print(f"{idx:3}. {status_icon} {region_id:20} - {label}{default_marker}")
+    
+    print("=" * 70)
     
     # Get user selection
     while True:
-        prompt = f"Select region [1-{len(sorted_regions)}] (Enter for default: {default}): "
+        prompt = f"Select region [1-{len(all_regions)}] (Enter for default: {default}): "
         choice = input(prompt).strip()
         
         if not choice:
@@ -315,39 +368,78 @@ def _select_region(regions, default: str) -> str:
         
         try:
             idx = int(choice) - 1
-            if 0 <= idx < len(sorted_regions):
-                return sorted_regions[idx].get('id')
+            if 0 <= idx < len(all_regions):
+                return all_regions[idx].get('id')
             else:
-                print(f"Invalid choice. Please enter 1-{len(sorted_regions)}")
+                print(f"Invalid choice. Please enter 1-{len(all_regions)}")
         except ValueError:
             print("Invalid input. Please enter a number.")
 
 
 def _select_instance_type(types, default: str) -> str:
-    """Interactive instance type selection."""
+    """Interactive instance type selection grouped by plan type."""
     import sys
     
-    # Filter and categorize types
-    gpu_types = [t for t in types if t.get('id', '').startswith('g6-') or t.get('id', '').startswith('g2-gpu')]
-    standard_types = [t for t in types if not (t.get('id', '').startswith('g6-') or t.get('id', '').startswith('g2-gpu')) 
-                     and t.get('class', '') in ['standard', 'dedicated']]
+    # Categorize types by plan type
+    categorized = {
+        'GPU Linodes': [],
+        'Accelerated Linodes': [],
+        'Premium Linodes': [],
+        'High Memory Linodes': [],
+        'Dedicated CPU': [],
+        'Shared CPU': []
+    }
     
-    # Sort by price
-    gpu_types.sort(key=lambda t: t.get('price', {}).get('hourly', 0))
-    standard_types.sort(key=lambda t: t.get('price', {}).get('hourly', 0))
+    for t in types:
+        type_id = t.get('id', '')
+        type_class = t.get('class', '')
+        
+        if type_class == 'gpu':
+            categorized['GPU Linodes'].append(t)
+        elif type_class == 'accelerated':
+            categorized['Accelerated Linodes'].append(t)
+        elif type_class == 'premium' or type_id.startswith('g7-premium'):
+            categorized['Premium Linodes'].append(t)
+        elif 'highmem' in type_id:
+            categorized['High Memory Linodes'].append(t)
+        elif 'dedicated' in type_id or type_class == 'dedicated':
+            categorized['Dedicated CPU'].append(t)
+        elif type_class == 'standard':
+            categorized['Shared CPU'].append(t)
+    
+    # Sort each category by price
+    for category in categorized:
+        categorized[category].sort(key=lambda t: t.get('price', {}).get('hourly', 0))
     
     print()
     print("Available Instance Types:")
-    print("=" * 80)
+    print("=" * 90)
     
     all_types = []
     
-    # Show GPU types
-    if gpu_types:
+    # Display categories in order
+    category_order = [
+        'GPU Linodes',
+        'Accelerated Linodes', 
+        'Premium Linodes',
+        'High Memory Linodes',
+        'Dedicated CPU',
+        'Shared CPU'
+    ]
+    
+    for category in category_order:
+        category_types = categorized[category]
+        if not category_types:
+            continue
+            
         print()
-        print("GPU Instances (for AI/ML workloads):")
-        print("-" * 80)
-        for t in gpu_types:  # Show all GPU types
+        print(f"{category}:")
+        print("-" * 90)
+        
+        # Limit displayed items for large categories
+        display_limit = len(category_types) if category in ['GPU Linodes', 'Accelerated Linodes'] else 15
+        
+        for t in category_types[:display_limit]:
             type_id = t.get('id', 'unknown')
             default_marker = " (default)" if type_id == default else ""
             idx = len(all_types) + 1
@@ -356,27 +448,18 @@ def _select_instance_type(types, default: str) -> str:
             memory = t.get('memory', 0)
             vcpus = t.get('vcpus', 0)
             disk = t.get('disk', 0)
-            print(f"{idx:3}. {type_id:30} ${price:6.2f}/hr  "
-                  f"{memory:6}MB RAM  {vcpus:2} vCPUs  {disk:8}MB{default_marker}")
+            gpus = t.get('gpus', 0)
+            
+            # Show GPU count for GPU instances
+            gpu_info = f"  {gpus} GPUs" if gpus > 0 else ""
+            
+            print(f"{idx:3}. {type_id:30} ${price:7.2f}/hr  "
+                  f"{memory:6}MB RAM  {vcpus:2} vCPUs  {disk:8}MB{gpu_info}{default_marker}")
+        
+        if len(category_types) > display_limit:
+            print(f"     ... and {len(category_types) - display_limit} more")
     
-    # Show standard types
-    if standard_types:
-        print()
-        print("Standard Instances:")
-        print("-" * 80)
-        for t in standard_types[:25]:  # Show top 25 standard types
-            type_id = t.get('id', 'unknown')
-            default_marker = " (default)" if type_id == default else ""
-            idx = len(all_types) + 1
-            all_types.append(t)
-            price = t.get('price', {}).get('hourly', 0)
-            memory = t.get('memory', 0)
-            vcpus = t.get('vcpus', 0)
-            disk = t.get('disk', 0)
-            print(f"{idx:3}. {type_id:30} ${price:6.2f}/hr  "
-                  f"{memory:6}MB RAM  {vcpus:2} vCPUs  {disk:8}MB{default_marker}")
-    
-    print("=" * 80)
+    print("=" * 90)
     
     # Get user selection
     while True:
