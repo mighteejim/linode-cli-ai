@@ -29,16 +29,16 @@ the container’s environment.
 ## Usage
 
 ```bash
-linode-cli ai init chat-agent --directory chat-demo
+linode-cli build init chat-agent --directory chat-demo
 cd chat-demo
 cp .env.example .env  # add OLLAMA_MODELS if desired
-linode-cli ai deploy --region us-chi --linode-type g6-standard-2 --wait
-linode-cli ai status
+linode-cli build deploy --region us-chi --linode-type g6-standard-2 --wait
+linode-cli build status
 ```
 
 Once running, access the Ollama API at `http://<hostname>/api/tags` (80→11434).
 Destroy the deployment when finished:
 
 ```bash
-linode-cli ai destroy --app chat-agent --env default
+linode-cli build destroy --app chat-agent --env default
 ```

@@ -1,4 +1,4 @@
-"""Implementation for `linode-cli ai status`."""
+"""Implementation for `linode-cli build status`."""
 
 from __future__ import annotations
 

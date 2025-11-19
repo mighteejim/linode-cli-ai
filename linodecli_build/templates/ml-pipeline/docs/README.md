@@ -5,4 +5,4 @@ Production ML inference pipeline with batching, caching, and monitoring. Powered
 ## Quickstart
 
 1. Copy `.env.example` to `.env` and fill in any required values.
-2. Deploy with `linode-cli ai deploy`.
+2. Deploy with `linode-cli build deploy`.

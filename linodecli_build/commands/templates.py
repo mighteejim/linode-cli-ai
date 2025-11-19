@@ -1,4 +1,4 @@
-"""Implementation of `linode-cli ai templates` commands."""
+"""Implementation of `linode-cli build templates` commands."""
 
 from __future__ import annotations
 
@@ -392,7 +392,7 @@ def _cmd_install(args) -> None:
         print(f"  Location: {installed_path}")
         print()
         print("You can now use it with:")
-        print(f"  linode-cli ai init {template_name}")
+        print(f"  linode-cli build init {template_name}")
     
     except Exception as e:
         print(f"Error installing template: {e}", file=sys.stderr)
@@ -410,7 +410,7 @@ def _cmd_uninstall(args) -> None:
         print(f"Error: Template '{template_name}' is not installed", file=sys.stderr)
         print()
         print("List installed templates with:")
-        print("  linode-cli ai templates list")
+        print("  linode-cli build templates list")
         sys.exit(1)
     
     # Remove it

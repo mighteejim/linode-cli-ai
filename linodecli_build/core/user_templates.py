@@ -1,6 +1,6 @@
 """User templates management.
 
-User templates are stored at ~/.config/linode-cli-ai/templates/
+User templates are stored at ~/.config/linode-cli.d/build/templates/
 and persist across plugin upgrades.
 """
 
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 def user_templates_dir() -> Path:
     """Return path to user templates directory."""
-    config_dir = Path.home() / ".config" / "linode-cli.d" / "ai" / "templates"
+    config_dir = Path.home() / ".config" / "linode-cli.d" / "build" / "templates"
     return config_dir
 
 

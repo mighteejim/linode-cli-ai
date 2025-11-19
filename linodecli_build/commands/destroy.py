@@ -1,4 +1,4 @@
-"""Implementation for `linode-cli ai destroy`."""
+"""Implementation for `linode-cli build destroy`."""
 
 from __future__ import annotations
 

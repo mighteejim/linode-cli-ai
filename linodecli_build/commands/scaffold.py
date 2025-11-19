@@ -1,4 +1,4 @@
-"""Implementation for `linode-cli ai templates scaffold` command."""
+"""Implementation for `linode-cli build templates scaffold` command."""
 
 from __future__ import annotations
 
@@ -104,10 +104,10 @@ TODO: Document requirements
 ## Quick Start
 
 ```bash
-linode-cli ai init {args.name}
+linode-cli build init {args.name}
 cd {args.name}
 # Configure .env file
-linode-cli ai deploy --wait
+linode-cli build deploy --wait
 ```
 
 ## Configuration
@@ -167,9 +167,9 @@ TODO: Add common issues and solutions
     print()
     print("  4. Complete the README.md documentation")
     print()
-    print(f"  5. Validate: linode-cli ai templates validate {template_dir}")
+    print(f"  5. Validate: linode-cli build templates validate {template_dir}")
     print()
-    print(f"  6. Test: linode-cli ai templates test {args.name} --dry-run")
+    print(f"  6. Test: linode-cli build templates test {args.name} --dry-run")
     print()
 
 
@@ -246,8 +246,8 @@ def _scaffold_interactive(args) -> None:
     print()
     print("Next steps:")
     print(f"  1. Review and customize {template_path}")
-    print(f"  2. Test: linode-cli ai templates test {args.name} --dry-run")
-    print(f"  3. Deploy: linode-cli ai init {args.name} && cd {args.name} && linode-cli ai deploy")
+    print(f"  2. Test: linode-cli build templates test {args.name} --dry-run")
+    print(f"  3. Deploy: linode-cli build init {args.name} && cd {args.name} && linode-cli build deploy")
 
 
 def _gather_user_requirements(template_name: str) -> Dict[str, Any]:
@@ -355,7 +355,7 @@ def _generate_readme(user_input: Dict[str, Any], template_data: Dict[str, Any]) 
 ## Quick Start
 
 ```bash
-linode-cli ai init {name}
+linode-cli build init {name}
 cd {name}
 
 # Configure environment variables
@@ -363,7 +363,7 @@ cp .env.example .env
 # Edit .env with your settings
 
 # Deploy
-linode-cli ai deploy --wait
+linode-cli build deploy --wait
 ```
 
 ## Configuration
@@ -375,7 +375,7 @@ See `.env.example` for available environment variables.
 After deployment, check status:
 
 ```bash
-linode-cli ai status
+linode-cli build status
 ```
 
 ## Troubleshooting

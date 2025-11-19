@@ -23,10 +23,10 @@ Python-based alternative to the TEI (Rust) embeddings server. Uses the same `sen
 ## Usage
 
 ```bash
-linode-cli ai init embeddings-python --directory embeddings-demo
+linode-cli build init embeddings-python --directory embeddings-demo
 cd embeddings-demo
-linode-cli ai deploy --region us-southeast --linode-type g6-standard-2 --wait
-linode-cli ai status
+linode-cli build deploy --region us-southeast --linode-type g6-standard-2 --wait
+linode-cli build status
 ```
 
 ## API Compatibility
@@ -75,5 +75,5 @@ Returns:
 ## Cleanup
 
 ```bash
-linode-cli ai destroy --app embeddings-python --env default
+linode-cli build destroy --app embeddings-python --env default
 ```

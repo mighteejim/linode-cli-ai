@@ -1,7 +1,7 @@
 """Generate comprehensive instructions for LLMs to create templates.
 
 This module generates detailed documentation and context for LLMs (like Claude, GPT-4)
-to assist users in creating new templates for the linode-cli-ai system.
+to assist users in creating new templates for the linode-cli-build system.
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ class LLMInstructionsGenerator:
             
             for template_name in templates_to_load:
                 try:
-                    resource = resources.files("linodecli_ai").joinpath(
+                    resource = resources.files("linodecli_build").joinpath(
                         f"templates/{template_name}/template.yml"
                     )
                     if resource.is_file():
@@ -614,9 +614,9 @@ After generating the template, verify:
 
 After generation, the user should:
 
-1. Run validation: `linode-cli ai templates validate <name>`
-2. Test deployment: `linode-cli ai templates test <name> --dry-run`
-3. Deploy for real: `linode-cli ai init <name> && cd <name> && linode-cli ai deploy --wait`
+1. Run validation: `linode-cli build templates validate <name>`
+2. Test deployment: `linode-cli build templates test <name> --dry-run`
+3. Deploy for real: `linode-cli build init <name> && cd <name> && linode-cli build deploy --wait`
 """
     
     def _render_stub_content(self, stub_path: str) -> str:

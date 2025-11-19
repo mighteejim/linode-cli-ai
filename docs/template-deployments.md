@@ -1,7 +1,7 @@
 # Template Deployment Workflow
 
 This plugin assumes a simple, repeatable deployment layout. Every deployment created
-via `linode-cli ai init <template>` contains:
+via `linode-cli build init <template>` contains:
 
 1. **`deploy.yml`** – Complete deployment configuration (what to deploy + where to deploy).
    This file combines the template definition with deployment-specific settings.
@@ -13,7 +13,7 @@ via `linode-cli ai init <template>` contains:
 
 1. Initialize deployment:
    ```bash
-   linode-cli ai init chat-agent --directory chat-demo
+   linode-cli build init chat-agent --directory chat-demo
    cd chat-demo
    ```
 
@@ -27,22 +27,22 @@ via `linode-cli ai init <template>` contains:
 
 3. Deploy:
    ```bash
-   linode-cli ai deploy --wait
+   linode-cli build deploy --wait
    ```
 
 4. Check status:
    ```bash
-   linode-cli ai status
+   linode-cli build status
    ```
 
 5. Destroy when finished:
    ```bash
-   linode-cli ai destroy
+   linode-cli build destroy
    ```
 
 ## `deploy.yml`
 
-This file contains everything needed for deployment. When you run `linode-cli ai init`,
+This file contains everything needed for deployment. When you run `linode-cli build init`,
 the template is copied to `deploy.yml` in your deployment directory. You can then
 customize it for your specific deployment needs.
 
@@ -117,19 +117,19 @@ You can maintain multiple deployment configurations:
 
 ```bash
 # Production
-linode-cli ai init llm-api --directory production
+linode-cli build init llm-api --directory production
 cd production
 nano deploy.yml
 # Set: region_default: us-east, type_default: g6-dedicated-16, tags: [ai, production]
 
 # Staging
-linode-cli ai init llm-api --directory staging
+linode-cli build init llm-api --directory staging
 cd staging
 nano deploy.yml
 # Set: region_default: us-west, type_default: g6-standard-8, tags: [ai, staging]
 
 # Development
-linode-cli ai init llm-api --directory development
+linode-cli build init llm-api --directory development
 cd development
 nano deploy.yml
 # Set: region_default: us-southeast, type_default: g6-standard-4, tags: [ai, dev]
@@ -178,19 +178,19 @@ You can override settings from `deploy.yml` at deploy time:
 
 ```bash
 # Override region
-linode-cli ai deploy --region us-west
+linode-cli build deploy --region us-west
 
 # Override instance type
-linode-cli ai deploy --linode-type g6-dedicated-16
+linode-cli build deploy --linode-type g6-dedicated-16
 
 # Override container image
-linode-cli ai deploy --container-image myorg/myimage:v2
+linode-cli build deploy --container-image myorg/myimage:v2
 
 # Override environment name (for tagging)
-linode-cli ai deploy --env staging
+linode-cli build deploy --env staging
 
 # Multiple overrides
-linode-cli ai deploy --region us-east --linode-type g6-standard-4 --env production
+linode-cli build deploy --region us-east --linode-type g6-standard-4 --env production
 ```
 
 Command-line arguments always take precedence over `deploy.yml` settings.
@@ -216,26 +216,26 @@ You can have multiple deployments from the same template:
 
 ```bash
 # Production deployment
-linode-cli ai init llm-api --directory prod
+linode-cli build init llm-api --directory prod
 cd prod
 nano deploy.yml  # region: us-east, type: g6-dedicated-16
-linode-cli ai deploy --env production
+linode-cli build deploy --env production
 
 # Staging deployment
 cd ..
-linode-cli ai init llm-api --directory staging
+linode-cli build init llm-api --directory staging
 cd staging
 nano deploy.yml  # region: us-west, type: g6-standard-8
-linode-cli ai deploy --env staging
+linode-cli build deploy --env staging
 
 # List all deployments
-linode-cli ai status
+linode-cli build status
 
 # Destroy specific environment
 cd prod
-linode-cli ai destroy  # Infers app from deploy.yml
+linode-cli build destroy  # Infers app from deploy.yml
 # or
-linode-cli ai destroy --app llm-api --env production
+linode-cli build destroy --app llm-api --env production
 ```
 
 ## Template Development

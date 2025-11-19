@@ -32,7 +32,7 @@ Templates use a **declarative approach** with the capabilities system, making th
 Use AI assistance to generate templates quickly:
 
 ```bash
-linode-cli ai templates scaffold my-api --llm-assist
+linode-cli build templates scaffold my-api --llm-assist
 
 # Answer a few questions:
 # - What service? (e.g., "FastAPI ML inference API")
@@ -57,7 +57,7 @@ linode-cli ai templates scaffold my-api --llm-assist
 Answer detailed questions to generate a complete template:
 
 ```bash
-linode-cli ai templates scaffold my-api
+linode-cli build templates scaffold my-api
 
 # Answer detailed questions about:
 # - Display name, description
@@ -435,7 +435,7 @@ The LLM-assisted workflow leverages AI to help you create production-ready templ
 
 1. **Run scaffold with `--llm-assist`:**
    ```bash
-   linode-cli ai templates scaffold pytorch-serve --llm-assist
+   linode-cli build templates scaffold pytorch-serve --llm-assist
    ```
 
 2. **Answer high-level questions:**
@@ -470,8 +470,8 @@ The LLM-assisted workflow leverages AI to help you create production-ready templ
 
 6. **Validate and test:**
    ```bash
-   linode-cli ai templates validate pytorch-serve
-   linode-cli ai templates test pytorch-serve --dry-run
+   linode-cli build templates validate pytorch-serve
+   linode-cli build templates test pytorch-serve --dry-run
    ```
 
 ### Benefits
@@ -485,7 +485,7 @@ The LLM-assisted workflow leverages AI to help you create production-ready templ
 
 ```bash
 # 1. Create scaffold
-$ linode-cli ai templates scaffold ml-api --llm-assist
+$ linode-cli build templates scaffold ml-api --llm-assist
 
 What service do you want to deploy?
 > PyTorch model serving with FastAPI and Redis caching
@@ -522,21 +522,21 @@ $ cursor ml-api/
 # LLM generates complete template.yml
 
 # 3. Validate
-$ linode-cli ai templates validate ml-api
+$ linode-cli build templates validate ml-api
 ✓ All required fields present
 ✓ Schema validation passed
 ✓ Template validation successful!
 
 # 4. Test
-$ linode-cli ai templates test ml-api --dry-run
+$ linode-cli build templates test ml-api --dry-run
 # Shows generated cloud-init
 
 # 5. Deploy
-$ linode-cli ai init ml-api
+$ linode-cli build init ml-api
 $ cd ml-api
 $ cp .env.example .env
 # Edit .env
-$ linode-cli ai deploy --wait
+$ linode-cli build deploy --wait
 ```
 
 ## Validation and Testing
@@ -546,10 +546,10 @@ $ linode-cli ai deploy --wait
 Check template correctness before deploying:
 
 ```bash
-linode-cli ai templates validate my-template/
+linode-cli build templates validate my-template/
 
 # Or validate specific file
-linode-cli ai templates validate my-template/template.yml
+linode-cli build templates validate my-template/template.yml
 ```
 
 **Checks:**
@@ -566,17 +566,17 @@ Test your template with a real deployment:
 
 ```bash
 # Manual test deployment
-linode-cli ai init my-template --directory my-deployment
+linode-cli build init my-template --directory my-deployment
 cd my-deployment
 # Review and customize deploy.yml if needed
 nano deploy.yml
 cp .env.example .env
 # Configure .env
-linode-cli ai deploy --wait
-linode-cli ai status
+linode-cli build deploy --wait
+linode-cli build status
 
 # Clean up
-linode-cli ai destroy  # Reads app name from deploy.yml
+linode-cli build destroy  # Reads app name from deploy.yml
 ```
 
 ## Adding Templates to the Plugin
@@ -587,19 +587,19 @@ Once you've developed and tested a template, you can install it for reuse:
 
 ```bash
 # Install your template
-linode-cli ai templates install ./my-template
+linode-cli build templates install ./my-template
 
 # Now use it like a bundled template
-linode-cli ai init my-template --directory deployment
+linode-cli build init my-template --directory deployment
 ```
 
-Your installed templates are stored at `~/.config/linode-cli.d/ai/templates/` and won't be overwritten during plugin upgrades.
+Your installed templates are stored at `~/.config/linode-cli.d/build/templates/` and won't be overwritten during plugin upgrades.
 
 ### Uninstalling Templates
 
 ```bash
 # Remove an installed template
-linode-cli ai templates uninstall my-template
+linode-cli build templates uninstall my-template
 ```
 
 ### Contributing Templates to the Plugin
@@ -607,8 +607,8 @@ linode-cli ai templates uninstall my-template
 To add your template to the bundled templates (available to all users):
 
 1. Fork the repository
-2. Add your template to `linodecli_ai/templates/your-template/`
-3. Add entry to `linodecli_ai/templates/index.yml`:
+2. Add your template to `linodecli_build/templates/your-template/`
+3. Add entry to `linodecli_build/templates/index.yml`:
    ```yaml
    templates:
      - name: your-template
@@ -738,7 +738,7 @@ guidance:
 ## Additional Resources
 
 - [Template Deployments Guide](template-deployments.md)
-- [Example Templates](../linodecli_ai/templates/)
+- [Example Templates](../linodecli_build/templates/)
 - [Linode API Documentation](https://www.linode.com/docs/api/)
 
 ## Getting Help

@@ -1,4 +1,4 @@
-"""`linode-cli ai` plugin entrypoint."""
+"""`linode-cli build` plugin entrypoint."""
 
 from __future__ import annotations
 
@@ -8,15 +8,15 @@ from linodecli.plugins import plugins as plugin_core
 
 from .commands import base
 
-PLUGIN_NAME = "ai"
-PLUGIN_DESCRIPTION = "Deploy AI demo applications on Linode."
+PLUGIN_NAME = "build"
+PLUGIN_DESCRIPTION = "Deploy applications on Linode with declarative templates."
 PLUGIN_AUTHOR = "Linode"
-PLUGIN_VERSION = "0.1.0"
+PLUGIN_VERSION = "0.2.0"
 
 
 def call(args, context):
-    """Entrypoint invoked by linode-cli when running `linode-cli ai`."""
-    parser = argparse.ArgumentParser(prog="linode-cli ai")
+    """Entrypoint invoked by linode-cli when running `linode-cli build`."""
+    parser = argparse.ArgumentParser(prog="linode-cli build")
     plugin_core.inherit_plugin_args(parser)
     base.register_root_parser(parser, context)
 
@@ -30,4 +30,4 @@ def call(args, context):
 
 def populate(subparsers, config):
     """Compatibility helper for the Core CLI to reuse command wiring."""
-    base.register_ai_plugin(subparsers, config)
+    base.register_build_plugin(subparsers, config)

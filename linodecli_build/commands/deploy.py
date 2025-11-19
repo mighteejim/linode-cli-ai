@@ -1,4 +1,4 @@
-"""Implementation for `linode-cli ai deploy`."""
+"""Implementation for `linode-cli build deploy`."""
 
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ def _cmd_deploy(args, config) -> None:
     
     if not deploy_file.exists():
         print("Error: No deploy.yml found in current directory.", file=sys.stderr)
-        print("Run 'linode-cli ai init <template>' first to initialize a deployment.", file=sys.stderr)
+        print("Run 'linode-cli build init <template>' first to initialize a deployment.", file=sys.stderr)
         sys.exit(1)
     
     try:
@@ -206,7 +206,7 @@ def _cmd_deploy(args, config) -> None:
         registry.update_fields(deployment_id, {"last_status": record["last_status"]})
         print(
             "Linode is running. Container start-up can take several minutes; "
-            "run `linode-cli ai status` to monitor health."
+            "run `linode-cli build status` to monitor health."
         )
 
     print("")
@@ -254,7 +254,7 @@ def _slugify(value: str, max_length: int) -> str:
 
 
 def _build_label(app_name: str, env_name: str, timestamp: str) -> str:
-    base = f"ai-{_slugify(app_name, 10)}-{_slugify(env_name, 6)}-{timestamp}"
+    base = f"build-{_slugify(app_name, 10)}-{_slugify(env_name, 6)}-{timestamp}"
     return base[:32]
 
 
@@ -266,11 +266,11 @@ def _build_tag(prefix: str, value: str) -> str:
 
 def _build_tags(app_name: str, env_name: str, template, deployment_id: str):
     return [
-        _build_tag("ai-app", app_name),
-        _build_tag("ai-env", env_name),
-        _build_tag("ai-tmpl", template.name),
-        _build_tag("ai-tver", template.version),
-        _build_tag("ai-deploy", deployment_id[:12]),
+        _build_tag("build-app", app_name),
+        _build_tag("build-env", env_name),
+        _build_tag("build-tmpl", template.name),
+        _build_tag("build-tver", template.version),
+        _build_tag("build-deploy", deployment_id[:12]),
     ]
 
 

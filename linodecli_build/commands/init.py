@@ -1,4 +1,4 @@
-"""Implementation for `linode-cli ai init`."""
+"""Implementation for `linode-cli build init`."""
 
 from __future__ import annotations
 
@@ -125,7 +125,7 @@ def _cmd_init(args):
     print("Next steps:")
     print("  1. Review and customize deploy.yml (region, instance type, etc.)")
     print("  2. Copy .env.example to .env and fill in required values")
-    print("  3. Run: linode-cli ai deploy")
+    print("  3. Run: linode-cli build deploy")
     
     # Print guidance if available
     guidance = template.data.get("guidance", {})
@@ -209,6 +209,6 @@ def _render_readme(template) -> str:
         "## Quickstart",
         "",
         "1. Copy `.env.example` to `.env` and fill in any required values.",
-        "2. Deploy with `linode-cli ai deploy`.",
+        "2. Deploy with `linode-cli build deploy`.",
     ]
     return "\n".join(content) + "\n"

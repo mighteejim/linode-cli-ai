@@ -53,7 +53,7 @@ def generate_cloud_init(config: CloudInitConfig) -> str:
     # Build write_files
     write_files = [
         {
-            "path": "/etc/build-ai.env",
+            "path": "/etc/build.env",
             "permissions": "0600",
             "owner": "root:root",
             "content": _render_env_file(config.env_vars),
@@ -264,7 +264,7 @@ def _render_start_script(config: CloudInitConfig) -> str:
         "",
         "# Source env file for variable expansion in command",
         "set -a",
-        ". /etc/build-ai.env",
+        ". /etc/build.env",
         "set +a",
     ]
     
@@ -274,7 +274,7 @@ def _render_start_script(config: CloudInitConfig) -> str:
         "docker run -d \\",
         "  --name \"$CONTAINER_NAME\" \\",
         "  --restart unless-stopped \\",
-        "  --env-file /etc/build-ai.env \\",
+        "  --env-file /etc/build.env \\",
         "  -p ${EXTERNAL_PORT}:${INTERNAL_PORT} \\",
     ]
     

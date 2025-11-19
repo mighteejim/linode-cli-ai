@@ -7,13 +7,13 @@
 Create a new template with LLM assistance:
 
 ```bash
-linode-cli ai templates scaffold <name> --llm-assist
+linode-cli build templates scaffold <name> --llm-assist
 ```
 
 Create a new template interactively:
 
 ```bash
-linode-cli ai templates scaffold <name>
+linode-cli build templates scaffold <name>
 ```
 
 ### Validate a Template
@@ -21,14 +21,14 @@ linode-cli ai templates scaffold <name>
 Check template for errors:
 
 ```bash
-linode-cli ai templates validate <path>
+linode-cli build templates validate <path>
 ```
 
 Examples:
 ```bash
-linode-cli ai templates validate my-template/
-linode-cli ai templates validate my-template/template.yml
-linode-cli ai templates validate ./template.yml
+linode-cli build templates validate my-template/
+linode-cli build templates validate my-template/template.yml
+linode-cli build templates validate ./template.yml
 ```
 
 ### Test a Template
@@ -36,17 +36,17 @@ linode-cli ai templates validate ./template.yml
 Preview cloud-init (dry run):
 
 ```bash
-linode-cli ai templates test <name-or-path> --dry-run
+linode-cli build templates test <name-or-path> --dry-run
 ```
 
 Examples:
 ```bash
 # Test bundled template
-linode-cli ai templates test llm-api --dry-run
+linode-cli build templates test llm-api --dry-run
 
 # Test local template
-linode-cli ai templates test ./my-template --dry-run
-linode-cli ai templates test my-template/template.yml --dry-run
+linode-cli build templates test ./my-template --dry-run
+linode-cli build templates test my-template/template.yml --dry-run
 ```
 
 ## Template Capabilities
@@ -161,27 +161,27 @@ guidance:
 
 ```bash
 # 1. Create scaffold
-linode-cli ai templates scaffold my-api --llm-assist
+linode-cli build templates scaffold my-api --llm-assist
 
 # 2. Complete template (manually or with LLM)
 # Feed to LLM: "@my-api/llm-instructions.md complete this template"
 
 # 3. Validate
-linode-cli ai templates validate my-api/
+linode-cli build templates validate my-api/
 
 # 4. Test locally
-linode-cli ai init ./my-api --directory test-deploy
+linode-cli build init ./my-api --directory test-deploy
 cd test-deploy
-linode-cli ai deploy --wait
+linode-cli build deploy --wait
 
 # 5. Install for reuse
 cd ..
-linode-cli ai templates install ./my-api
+linode-cli build templates install ./my-api
 
 # 6. Use like bundled template
-linode-cli ai init my-api --directory production
+linode-cli build init my-api --directory production
 cd production
-linode-cli ai deploy --wait
+linode-cli build deploy --wait
 ```
 
 ### Manual Creation
@@ -194,15 +194,15 @@ mkdir -p my-api/docs
 # (use example above)
 
 # Validate
-linode-cli ai templates validate my-api/
+linode-cli build templates validate my-api/
 
 # Install
-linode-cli ai templates install ./my-api
+linode-cli build templates install ./my-api
 
 # Deploy
-linode-cli ai init my-api
+linode-cli build init my-api
 cd my-api
-linode-cli ai deploy --wait
+linode-cli build deploy --wait
 ```
 
 ## Common Patterns
@@ -297,20 +297,20 @@ Before deploying, ensure:
 
 - [Template Development Guide](template-development.md)
 - [Implementation Summary](../IMPLEMENTATION_SUMMARY.md)
-- [Example Templates](../linodecli_ai/templates/)
+- [Example Templates](../linodecli_build/templates/)
 
 ## Getting Help
 
 ```bash
 # Show template details
-linode-cli ai templates show <name>
+linode-cli build templates show <name>
 
 # List available templates
-linode-cli ai templates list
+linode-cli build templates list
 
 # Show command help
-linode-cli ai templates --help
-linode-cli ai templates scaffold --help
-linode-cli ai templates validate --help
-linode-cli ai templates test --help
+linode-cli build templates --help
+linode-cli build templates scaffold --help
+linode-cli build templates validate --help
+linode-cli build templates test --help
 ```

@@ -55,7 +55,7 @@ MODEL_NAME=meta-llama/Meta-Llama-3-70B-Instruct # Context: 8k
 ## Usage
 
 ```bash
-linode-cli ai init llm-api --directory llm-demo
+linode-cli build init llm-api --directory llm-demo
 cd llm-demo
 cp .env.example .env
 
@@ -65,7 +65,7 @@ HF_TOKEN=hf_xxx
 MODEL_NAME=meta-llama/Meta-Llama-3-8B-Instruct
 EOF
 
-linode-cli ai deploy --region us-mia --linode-type g6-standard-8 --image linode/ubuntu22.04 --wait
+linode-cli build deploy --region us-mia --linode-type g6-standard-8 --image linode/ubuntu22.04 --wait
 ```
 
 **Note**: Always use `linode/ubuntu22.04` for GPU instances to ensure proper NVIDIA driver installation.
@@ -84,7 +84,7 @@ The deployment now uses parallel layer downloads (10 concurrent) for faster cont
 ### Check Status
 
 ```bash
-linode-cli ai status
+linode-cli build status
 ```
 
 Health will pass once `http://<hostname>/health` responds with HTTP 200.
@@ -93,7 +93,7 @@ Health will pass once `http://<hostname>/health` responds with HTTP 200.
 
 ```bash
 # Get the hostname from status output
-HOSTNAME=$(linode-cli ai status --format json | jq -r '.hostname')
+HOSTNAME=$(linode-cli build status --format json | jq -r '.hostname')
 
 # List models
 curl http://$HOSTNAME/v1/models
@@ -122,7 +122,7 @@ curl -X POST http://$HOSTNAME/v1/chat/completions \
 Destroy when finished:
 
 ```bash
-linode-cli ai destroy --app llm-api --env default
+linode-cli build destroy --app llm-api --env default
 ```
 
 ## Troubleshooting

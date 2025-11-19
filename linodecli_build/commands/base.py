@@ -11,21 +11,21 @@ from . import status as status_cmd
 from . import templates
 
 
-def register_ai_plugin(subparsers: argparse._SubParsersAction, config) -> None:
-    """Register the `ai` command namespace for the main CLI."""
-    ai_parser = subparsers.add_parser(
-        "ai",
-        help="Deploy AI demo applications on Linode",
+def register_build_plugin(subparsers: argparse._SubParsersAction, config) -> None:
+    """Register the `build` command namespace for the main CLI."""
+    build_parser = subparsers.add_parser(
+        "build",
+        help="Deploy applications on Linode with declarative templates",
     )
-    ai_parser.set_defaults(func=lambda args: ai_parser.print_help())
-    ai_subparsers = ai_parser.add_subparsers(dest="ai_command")
-    _register_subcommands(ai_subparsers, config)
+    build_parser.set_defaults(func=lambda args: build_parser.print_help())
+    build_subparsers = build_parser.add_subparsers(dest="build_command")
+    _register_subcommands(build_subparsers, config)
 
 
 def register_root_parser(parser: argparse.ArgumentParser, config) -> None:
     """Register subcommands when running as a standalone plugin."""
     parser.set_defaults(func=lambda args: parser.print_help())
-    subparsers = parser.add_subparsers(dest="ai_command")
+    subparsers = parser.add_subparsers(dest="build_command")
     _register_subcommands(subparsers, config)
 
 

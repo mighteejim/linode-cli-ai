@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "linodecli-ai"
+name = "linodecli-build"
 version = "0.2.0"
-description = "linode-cli plugin for deploying AI demo apps"
+description = "linode-cli plugin for deploying applications with declarative templates"
 readme = "README.md"
 requires-python = ">=3.9"
 authors = [{ name = "Linode", email = "support@linode.com" }]
@@ -22,14 +22,14 @@ dependencies = [
 dev = ["pytest"]
 
 [project.urls]
-Homepage = "https://github.com/linode/linode-cli-ai"
+Homepage = "https://github.com/linode/linode-cli-build"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["linodecli_ai*"]
+include = ["linodecli_build*"]
 
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools.package-data]
-"linodecli_ai" = ["templates/**/*.yml"]
+"linodecli_build" = ["templates/**/*.yml"]

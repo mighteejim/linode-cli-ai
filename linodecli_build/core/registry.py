@@ -6,12 +6,12 @@ import json
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
-REGISTRY_FILENAME = "ai-deployments.json"
+REGISTRY_FILENAME = "build-deployments.json"
 
 
 def registry_path() -> Path:
     """Return the path to the registry JSON file."""
-    config_dir = Path.home() / ".config" / "linode-cli.d" / "ai"
+    config_dir = Path.home() / ".config" / "linode-cli.d" / "build"
     return config_dir / REGISTRY_FILENAME
 
 
