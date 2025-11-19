@@ -286,23 +286,35 @@ def _slugify(value: str, max_length: int) -> str:
 
 
 def _build_label(app_name: str, env_name: str, timestamp: str) -> str:
+    """Build a Linode label (max 64 chars, alphanumeric + hyphens)."""
     base = f"build-{_slugify(app_name, 10)}-{_slugify(env_name, 6)}-{timestamp}"
-    return base[:32]
+    # Linode label limit is 64 characters
+    return base[:64]
 
 
 def _build_tag(prefix: str, value: str) -> str:
-    max_value_len = max(1, 50 - len(prefix) - 1)
-    safe_value = _slugify(value, max_value_len)
+    """Build a tag ensuring total length doesn't exceed 50 characters."""
+    # Linode tag limit is 50 characters total (including prefix:value)
+    max_total = 50
+    prefix_with_colon = f"{prefix}:"
+    available_for_value = max_total - len(prefix_with_colon)
+    
+    if available_for_value < 1:
+        # Prefix itself is too long, just use the value
+        return _slugify(value, max_total)
+    
+    safe_value = _slugify(value, available_for_value)
     return f"{prefix}:{safe_value}"
 
 
 def _build_tags(app_name: str, env_name: str, template, deployment_id: str):
+    """Build tags ensuring each doesn't exceed 50 characters."""
     return [
         _build_tag("build-app", app_name),
         _build_tag("build-env", env_name),
         _build_tag("build-tmpl", template.name),
         _build_tag("build-tver", template.version),
-        _build_tag("build-deploy", deployment_id[:12]),
+        _build_tag("build-deploy", deployment_id[:8]),  # Use shorter deployment ID
     ]
 
 
