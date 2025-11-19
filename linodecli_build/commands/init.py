@@ -242,9 +242,14 @@ def _interactive_configure(config, deploy_data: dict) -> dict:
     # Fetch and select region
     try:
         print("Fetching available regions...")
-        # Use the correct API path for regions
-        regions = client.regions.list()
-        region = _select_region(regions, default_region)
+        # Use CLI call_operation to fetch regions
+        result = client.call_operation('regions', 'list')
+        regions = result if isinstance(result, list) else []
+        if regions:
+            region = _select_region(regions, default_region)
+        else:
+            print(f"Warning: No regions returned. Using template default.")
+            region = default_region
     except Exception as e:
         print(f"Warning: Could not fetch regions ({e}). Using template default.")
         region = default_region
@@ -253,9 +258,14 @@ def _interactive_configure(config, deploy_data: dict) -> dict:
     try:
         print()
         print("Fetching available instance types...")
-        # Use the correct API path for types
-        types = client.linode.types.list()
-        instance_type = _select_instance_type(types, default_type)
+        # Use CLI call_operation to fetch types
+        result = client.call_operation('linode', 'types-list')
+        types = result if isinstance(result, list) else []
+        if types:
+            instance_type = _select_instance_type(types, default_type)
+        else:
+            print(f"Warning: No types returned. Using template default.")
+            instance_type = default_type
     except Exception as e:
         print(f"Warning: Could not fetch instance types ({e}). Using template default.")
         instance_type = default_type
@@ -278,7 +288,7 @@ def _select_region(regions, default: str) -> str:
     import sys
     
     # Sort regions by ID
-    sorted_regions = sorted(regions, key=lambda r: r.id)
+    sorted_regions = sorted(regions, key=lambda r: r.get('id', ''))
     
     print()
     print("Available Regions:")
@@ -286,9 +296,12 @@ def _select_region(regions, default: str) -> str:
     
     # Display regions in a compact format
     for i, region in enumerate(sorted_regions, 1):
-        status = "✓" if region.status == "ok" else "✗"
-        default_marker = " (default)" if region.id == default else ""
-        print(f"{i:3}. {status} {region.id:20} - {region.label}{default_marker}")
+        region_id = region.get('id', 'unknown')
+        label = region.get('label', region_id)
+        status = region.get('status', 'unknown')
+        status_icon = "✓" if status == "ok" else "✗"
+        default_marker = " (default)" if region_id == default else ""
+        print(f"{i:3}. {status_icon} {region_id:20} - {label}{default_marker}")
     
     print("-" * 60)
     
@@ -303,7 +316,7 @@ def _select_region(regions, default: str) -> str:
         try:
             idx = int(choice) - 1
             if 0 <= idx < len(sorted_regions):
-                return sorted_regions[idx].id
+                return sorted_regions[idx].get('id')
             else:
                 print(f"Invalid choice. Please enter 1-{len(sorted_regions)}")
         except ValueError:
@@ -315,12 +328,13 @@ def _select_instance_type(types, default: str) -> str:
     import sys
     
     # Filter and categorize types
-    gpu_types = [t for t in types if t.id.startswith('g6-')]
-    standard_types = [t for t in types if not t.id.startswith('g6-') and t.class_type in ['standard', 'dedicated']]
+    gpu_types = [t for t in types if t.get('id', '').startswith('g6-') or t.get('id', '').startswith('g2-gpu')]
+    standard_types = [t for t in types if not (t.get('id', '').startswith('g6-') or t.get('id', '').startswith('g2-gpu')) 
+                     and t.get('class', '') in ['standard', 'dedicated']]
     
     # Sort by price
-    gpu_types.sort(key=lambda t: t.price.hourly)
-    standard_types.sort(key=lambda t: t.price.hourly)
+    gpu_types.sort(key=lambda t: t.get('price', {}).get('hourly', 0))
+    standard_types.sort(key=lambda t: t.get('price', {}).get('hourly', 0))
     
     print()
     print("Available Instance Types:")
@@ -334,11 +348,16 @@ def _select_instance_type(types, default: str) -> str:
         print("GPU Instances (for AI/ML workloads):")
         print("-" * 80)
         for t in gpu_types[:10]:  # Limit to top 10
-            default_marker = " (default)" if t.id == default else ""
+            type_id = t.get('id', 'unknown')
+            default_marker = " (default)" if type_id == default else ""
             idx = len(all_types) + 1
             all_types.append(t)
-            print(f"{idx:3}. {t.id:20} ${t.price.hourly:6.2f}/hr  "
-                  f"{t.memory:5}MB RAM  {t.vcpus:2} vCPUs  {t.disk:6}MB{default_marker}")
+            price = t.get('price', {}).get('hourly', 0)
+            memory = t.get('memory', 0)
+            vcpus = t.get('vcpus', 0)
+            disk = t.get('disk', 0)
+            print(f"{idx:3}. {type_id:20} ${price:6.2f}/hr  "
+                  f"{memory:5}MB RAM  {vcpus:2} vCPUs  {disk:6}MB{default_marker}")
     
     # Show standard types
     if standard_types:
@@ -346,11 +365,16 @@ def _select_instance_type(types, default: str) -> str:
         print("Standard Instances:")
         print("-" * 80)
         for t in standard_types[:15]:  # Limit to top 15
-            default_marker = " (default)" if t.id == default else ""
+            type_id = t.get('id', 'unknown')
+            default_marker = " (default)" if type_id == default else ""
             idx = len(all_types) + 1
             all_types.append(t)
-            print(f"{idx:3}. {t.id:20} ${t.price.hourly:6.2f}/hr  "
-                  f"{t.memory:5}MB RAM  {t.vcpus:2} vCPUs  {t.disk:6}MB{default_marker}")
+            price = t.get('price', {}).get('hourly', 0)
+            memory = t.get('memory', 0)
+            vcpus = t.get('vcpus', 0)
+            disk = t.get('disk', 0)
+            print(f"{idx:3}. {type_id:20} ${price:6.2f}/hr  "
+                  f"{memory:5}MB RAM  {vcpus:2} vCPUs  {disk:6}MB{default_marker}")
     
     print("=" * 80)
     
@@ -365,7 +389,7 @@ def _select_instance_type(types, default: str) -> str:
         try:
             idx = int(choice) - 1
             if 0 <= idx < len(all_types):
-                return all_types[idx].id
+                return all_types[idx].get('id')
             else:
                 print(f"Invalid choice. Please enter 1-{len(all_types)}")
         except ValueError:
