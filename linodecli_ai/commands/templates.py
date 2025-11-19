@@ -11,7 +11,6 @@ from typing import Sequence, Dict, Any
 import yaml
 
 from ..core import templates as template_core
-from ..core.template_registry import TemplateRegistryClient, RegistryConfig, RegistryNetworkError
 from . import scaffold as scaffold_cmd
 
 
@@ -21,29 +20,11 @@ def register(subparsers: argparse._SubParsersAction, _config) -> None:
     templates_subparsers = parser.add_subparsers(dest="templates_cmd")
 
     list_parser = templates_subparsers.add_parser("list", help="List available templates")
-    list_parser.add_argument("--remote", action="store_true", help="Show remote templates only")
-    list_parser.add_argument("--cached", action="store_true", help="Show cached templates only")
     list_parser.set_defaults(func=_cmd_list)
 
     show_parser = templates_subparsers.add_parser("show", help="Show template details")
     show_parser.add_argument("name", help="Template name")
     show_parser.set_defaults(func=_cmd_show)
-
-    update_parser = templates_subparsers.add_parser("update", help="Update templates from remote registry")
-    update_parser.add_argument("--force", action="store_true", help="Force update even if cache is fresh")
-    update_parser.set_defaults(func=_cmd_update)
-
-    install_parser = templates_subparsers.add_parser("install", help="Download a specific template")
-    install_parser.add_argument("name", help="Template name")
-    install_parser.add_argument("--version", help="Specific version to download (default: latest)")
-    install_parser.set_defaults(func=_cmd_install)
-
-    remove_parser = templates_subparsers.add_parser("remove", help="Remove a cached template")
-    remove_parser.add_argument("name", help="Template name")
-    remove_parser.set_defaults(func=_cmd_remove)
-
-    clear_parser = templates_subparsers.add_parser("clear-cache", help="Clear all cached templates")
-    clear_parser.set_defaults(func=_cmd_clear_cache)
 
     # Add scaffold subcommand
     scaffold_cmd.register(templates_subparsers, _config)
@@ -53,98 +34,64 @@ def register(subparsers: argparse._SubParsersAction, _config) -> None:
     validate_parser.add_argument("path", help="Path to template directory or template.yml")
     validate_parser.set_defaults(func=_cmd_validate)
 
-    # Add test subcommand
-    test_parser = templates_subparsers.add_parser("test", help="Test a template")
-    test_parser.add_argument("name", help="Template name or path")
-    test_parser.add_argument("--dry-run", action="store_true", help="Show cloud-init without deploying")
-    test_parser.add_argument("--no-cleanup", action="store_true", help="Don't destroy after testing")
-    test_parser.set_defaults(func=_cmd_test)
+    # Add install command
+    install_parser = templates_subparsers.add_parser(
+        "install",
+        help="Install a local template for reuse"
+    )
+    install_parser.add_argument(
+        "path",
+        help="Path to template directory (containing template.yml)"
+    )
+    install_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite if template already exists"
+    )
+    install_parser.set_defaults(func=_cmd_install)
+    
+    # Add uninstall command
+    uninstall_parser = templates_subparsers.add_parser(
+        "uninstall",
+        help="Remove an installed user template"
+    )
+    uninstall_parser.add_argument(
+        "name",
+        help="Template name to uninstall"
+    )
+    uninstall_parser.set_defaults(func=_cmd_uninstall)
 
 
 def _cmd_list(args):
-    rows = []
+    """List all bundled and user templates."""
+    records = template_core.list_template_records()
     
-    # Show bundled templates unless --remote is specified
-    if not args.remote:
-        records = template_core.list_template_records()
-        for record in records:
-            try:
-                template = template_core.load_template(record.name)
-                source = "bundled" if not args.cached else None
-                if source:
-                    rows.append(
-                        (
-                            template.name,
-                            template.version,
-                            source,
-                            template.description.strip().replace("\n", " "),
-                        )
-                    )
-            except Exception:
-                continue
-    
-    # Show remote/cached templates unless --bundled is specified
-    if not hasattr(args, 'bundled') or not args.bundled:
-        try:
-            client = TemplateRegistryClient(RegistryConfig.load_from_file())
-            
-            if args.cached:
-                # Show only cached templates
-                cached = client.list_cached_templates()
-                for entry in cached:
-                    rows.append(
-                        (
-                            entry["name"],
-                            entry["version"],
-                            "cached",
-                            "(locally cached)",
-                        )
-                    )
-            elif args.remote:
-                # Show only remote templates
-                registry = client.fetch_index()
-                for entry in registry.templates:
-                    verified = "✓" if entry.verified else ""
-                    rows.append(
-                        (
-                            entry.name,
-                            entry.version,
-                            f"remote{verified}",
-                            entry.description.strip().replace("\n", " "),
-                        )
-                    )
-            else:
-                # Show both: merge remote with cached status
-                registry = client.fetch_index()
-                cached_names = {t["name"]: t["version"] for t in client.list_cached_templates()}
-                
-                for entry in registry.templates:
-                    if entry.name in cached_names:
-                        source = f"cached (v{cached_names[entry.name]})"
-                    else:
-                        source = "remote"
-                    
-                    if entry.verified:
-                        source += " ✓"
-                    
-                    rows.append(
-                        (
-                            entry.name,
-                            entry.version,
-                            source,
-                            entry.description.strip().replace("\n", " "),
-                        )
-                    )
-        except RegistryNetworkError:
-            print("Warning: Could not fetch remote templates (network error)", file=sys.stderr)
-        except Exception as e:
-            print(f"Warning: Error fetching remote templates: {e}", file=sys.stderr)
-
-    if not rows:
+    if not records:
         print("No templates found.")
         return
-
-    _print_table(("NAME", "VERSION", "SOURCE", "DESCRIPTION"), rows)
+    
+    rows = []
+    for record in records:
+        try:
+            template = template_core.load_template(record.name)
+            desc = template.description.strip().replace("\n", " ")
+            if len(desc) > 50:  # Shorten to make room for source column
+                desc = desc[:47] + "..."
+            
+            # Show source: bundled or user
+            source = "user" if record.source == "user" else "bundled"
+            
+            rows.append((
+                template.name,
+                template.version,
+                source,
+                desc
+            ))
+        except Exception:
+            continue
+    
+    if rows:
+        _print_table(("NAME", "VERSION", "SOURCE", "DESCRIPTION"), rows)
 
 
 def _cmd_show(args):
@@ -189,78 +136,6 @@ def _cmd_show(args):
             print(f"    - {item.get('name')}: {item.get('description', '')}")
     else:
         print("  Optional: none")
-
-
-def _cmd_update(args):
-    """Update templates from remote registry."""
-    print("Updating templates from registry...")
-    
-    try:
-        client = TemplateRegistryClient(RegistryConfig.load_from_file())
-        updated_count = client.update_templates(force=args.force)
-        
-        if updated_count > 0:
-            print(f"✓ Updated {updated_count} template(s)")
-        else:
-            print("✓ All templates are up to date")
-    
-    except RegistryNetworkError as e:
-        print(f"Error: Could not connect to template registry: {e}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"Error updating templates: {e}", file=sys.stderr)
-        sys.exit(1)
-
-
-def _cmd_install(args):
-    """Download a specific template."""
-    template_name = args.name
-    version = getattr(args, 'version', None)
-    
-    print(f"Downloading template '{template_name}'...")
-    
-    try:
-        client = TemplateRegistryClient(RegistryConfig.load_from_file())
-        template_dir = client.download_template(template_name, version=version)
-        
-        print(f"✓ Template downloaded to {template_dir}")
-        print(f"\nTo use this template, run:")
-        print(f"  linode-cli ai init {template_name}")
-    
-    except RegistryNetworkError as e:
-        print(f"Error: Could not connect to template registry: {e}", file=sys.stderr)
-        sys.exit(1)
-    except Exception as e:
-        print(f"Error downloading template: {e}", file=sys.stderr)
-        sys.exit(1)
-
-
-def _cmd_remove(args):
-    """Remove a cached template."""
-    template_name = args.name
-    
-    try:
-        client = TemplateRegistryClient(RegistryConfig.load_from_file())
-        client.remove_template(template_name)
-        
-        print(f"✓ Removed template '{template_name}' from cache")
-    
-    except Exception as e:
-        print(f"Error removing template: {e}", file=sys.stderr)
-        sys.exit(1)
-
-
-def _cmd_clear_cache(_args):
-    """Clear all cached templates."""
-    try:
-        client = TemplateRegistryClient(RegistryConfig.load_from_file())
-        client.clear_cache()
-        
-        print("✓ Cleared template cache")
-    
-    except Exception as e:
-        print(f"Error clearing cache: {e}", file=sys.stderr)
-        sys.exit(1)
 
 
 def _print_table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> None:
@@ -465,137 +340,83 @@ def _cmd_validate(args) -> None:
             print("✓ Template is valid (with warnings)")
 
 
-def _cmd_test(args) -> None:
-    """Test a template by deploying or showing cloud-init."""
-    print(f"Testing template: {args.name}\n")
+def _cmd_install(args) -> None:
+    """Install a local template to user templates directory."""
+    from ..core import user_templates
     
-    if args.dry_run:
-        _test_dry_run(args)
-    else:
-        _test_deploy(args)
-
-
-def _test_dry_run(args) -> None:
-    """Show generated cloud-init without deploying."""
-    from ..core import cloud_init, capabilities
+    path = Path(args.path).resolve()
     
-    # Load template
-    path = Path(args.name)
-    if path.is_dir():
-        template_file = path / "template.yml"
-    elif path.is_file():
-        template_file = path
-    else:
-        # Try loading as template name
-        try:
-            template = template_core.load_template(args.name)
-            print(f"Loaded bundled template: {template.name} v{template.version}\n")
-            _show_dry_run_for_template(template)
-            return
-        except Exception as e:
-            print(f"Error: Could not load template '{args.name}': {e}", file=sys.stderr)
-            sys.exit(1)
-    
-    # Load from file
-    if not template_file.exists():
-        print(f"Error: Template file not found: {template_file}", file=sys.stderr)
+    # Validate path
+    if not path.is_dir():
+        print(f"Error: '{path}' is not a directory", file=sys.stderr)
         sys.exit(1)
     
+    template_file = path / "template.yml"
+    if not template_file.exists():
+        print(f"Error: No template.yml found in {path}", file=sys.stderr)
+        sys.exit(1)
+    
+    # Load template to get name and validate
     try:
         with open(template_file, 'r') as f:
             data = yaml.safe_load(f)
     except Exception as e:
-        print(f"Error loading template: {e}", file=sys.stderr)
+        print(f"Error: Invalid template.yml: {e}", file=sys.stderr)
         sys.exit(1)
     
-    # Create template object
-    template = template_core.Template(
-        name=data.get("name", "test"),
-        display_name=data.get("display_name", "Test"),
-        version=data.get("version", "0.0.0"),
-        description=data.get("description", ""),
-        data=data,
-    )
+    if not isinstance(data, dict):
+        print("Error: template.yml must contain a YAML object", file=sys.stderr)
+        sys.exit(1)
     
-    _show_dry_run_for_template(template)
+    template_name = data.get("name")
+    if not template_name:
+        print("Error: template.yml must contain a 'name' field", file=sys.stderr)
+        sys.exit(1)
+    
+    template_version = data.get("version", "unknown")
+    
+    # Check if already installed
+    if not args.force and user_templates.get_user_template_path(template_name):
+        print(f"Error: Template '{template_name}' is already installed", file=sys.stderr)
+        print(f"Use --force to overwrite", file=sys.stderr)
+        sys.exit(1)
+    
+    # Install
+    try:
+        if args.force and user_templates.get_user_template_path(template_name):
+            user_templates.remove_user_template(template_name)
+        
+        installed_path = user_templates.add_user_template(template_name, path)
+        
+        print(f"✓ Installed template '{template_name}' v{template_version}")
+        print(f"  Location: {installed_path}")
+        print()
+        print("You can now use it with:")
+        print(f"  linode-cli ai init {template_name}")
+    
+    except Exception as e:
+        print(f"Error installing template: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
-def _show_dry_run_for_template(template: template_core.Template) -> None:
-    """Generate and display cloud-init for a template."""
-    from ..core import cloud_init, capabilities
+def _cmd_uninstall(args) -> None:
+    """Uninstall a user template."""
+    from ..core import user_templates
     
-    linode_cfg = template.data.get("deploy", {}).get("linode", {})
-    container_cfg = linode_cfg.get("container", {})
+    template_name = args.name
     
-    # Build minimal config
-    container_image = container_cfg.get("image", "placeholder:latest")
-    internal_port = container_cfg.get("internal_port", 8000)
-    external_port = container_cfg.get("external_port", 80)
-    requires_gpu = container_cfg.get("requires_gpu", False)
+    # Check if it's a user template
+    if not user_templates.get_user_template_path(template_name):
+        print(f"Error: Template '{template_name}' is not installed", file=sys.stderr)
+        print()
+        print("List installed templates with:")
+        print("  linode-cli ai templates list")
+        sys.exit(1)
     
-    # Create capability manager
-    capability_manager = capabilities.create_capability_manager(template.data)
-    
-    # Get custom setup
-    setup_cfg = template.data.get("setup", {})
-    custom_setup_script = setup_cfg.get("script")
-    custom_files = []
-    for file_spec in setup_cfg.get("files", []):
-        custom_files.append({
-            "path": file_spec.get("path"),
-            "permissions": file_spec.get("permissions", "0644"),
-            "owner": file_spec.get("owner", "root:root"),
-            "content": file_spec.get("content", ""),
-        })
-    
-    # Create test env vars
-    test_env = {
-        "BUILD_AI_APP_NAME": template.name,
-        "BUILD_AI_ENV": "test",
-    }
-    
-    config_obj = cloud_init.CloudInitConfig(
-        container_image=container_image,
-        internal_port=internal_port,
-        external_port=external_port,
-        env_vars=test_env,
-        post_start_script=container_cfg.get("post_start_script"),
-        command=container_cfg.get("command"),
-        requires_gpu=requires_gpu,
-        capability_manager=capability_manager,
-        custom_setup_script=custom_setup_script,
-        custom_files=custom_files,
-    )
-    
-    user_data = cloud_init.generate_cloud_init(config_obj)
-    
-    print("Generated cloud-init configuration:\n")
-    print("=" * 80)
-    print(user_data)
-    print("=" * 80)
-    print()
-    
-    # Show summary
-    print("Summary:")
-    print(f"  Template: {template.display_name} v{template.version}")
-    print(f"  Container: {container_image}")
-    print(f"  Ports: {external_port} -> {internal_port}")
-    print(f"  GPU: {'Yes' if requires_gpu or capability_manager else 'No'}")
-    if capability_manager:
-        print(f"  Capabilities: {len(capability_manager.capabilities)} configured")
-
-
-def _test_deploy(args) -> None:
-    """Actually deploy and test the template."""
-    print("Deploy testing not yet implemented.")
-    print("Use --dry-run to see generated cloud-init.")
-    print()
-    print("To test deployment manually:")
-    print(f"  1. linode-cli ai init {args.name}")
-    print(f"  2. cd {args.name}")
-    print("  3. Configure .env file")
-    print("  4. linode-cli ai deploy --wait")
-    print("  5. linode-cli ai status")
-    print()
-    if not args.no_cleanup:
-        print("  6. linode-cli ai destroy (when done)")
+    # Remove it
+    try:
+        user_templates.remove_user_template(template_name)
+        print(f"✓ Uninstalled template '{template_name}'")
+    except Exception as e:
+        print(f"Error uninstalling template: {e}", file=sys.stderr)
+        sys.exit(1)

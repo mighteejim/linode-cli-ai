@@ -1,6 +1,6 @@
 # Template System Quick Reference
 
-## New Commands
+## Commands
 
 ### Scaffold a Template
 
@@ -157,36 +157,34 @@ guidance:
 
 ## Workflow
 
-### 1. LLM-Assisted Creation
+### Scaffold, Install, and Use
 
 ```bash
-# Create scaffold
+# 1. Create scaffold
 linode-cli ai templates scaffold my-api --llm-assist
 
-# Answer questions
-# - Service description
-# - GPU requirement
-# - Dependencies
-# - Container image
-# - Health check details
+# 2. Complete template (manually or with LLM)
+# Feed to LLM: "@my-api/llm-instructions.md complete this template"
 
-# Feed to LLM in Cursor/Claude
-# "@my-api/llm-instructions.md complete this template"
-
-# Validate
+# 3. Validate
 linode-cli ai templates validate my-api/
 
-# Test
-linode-cli ai templates test my-api --dry-run
+# 4. Test locally
+linode-cli ai init ./my-api --directory test-deploy
+cd test-deploy
+linode-cli ai deploy --wait
 
-# Deploy
-linode-cli ai init my-api
-cd my-api
-# Edit .env
+# 5. Install for reuse
+cd ..
+linode-cli ai templates install ./my-api
+
+# 6. Use like bundled template
+linode-cli ai init my-api --directory production
+cd production
 linode-cli ai deploy --wait
 ```
 
-### 2. Manual Creation
+### Manual Creation
 
 ```bash
 # Create directory
@@ -198,8 +196,8 @@ mkdir -p my-api/docs
 # Validate
 linode-cli ai templates validate my-api/
 
-# Test
-linode-cli ai templates test my-api --dry-run
+# Install
+linode-cli ai templates install ./my-api
 
 # Deploy
 linode-cli ai init my-api

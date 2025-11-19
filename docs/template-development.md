@@ -519,23 +519,9 @@ linode-cli ai templates validate my-template/template.yml
 - GPU configuration (image, instance type)
 - Semantic versioning
 
-### Test Template (Dry Run)
+### Test Template Deployment
 
-See generated cloud-init without deploying:
-
-```bash
-linode-cli ai templates test my-template --dry-run
-```
-
-**Shows:**
-- Complete cloud-init configuration
-- What will be installed
-- What will be configured
-- Summary of settings
-
-### Test Template (Live Deploy)
-
-**Note**: Live deployment testing coming soon. For now:
+Test your template with a real deployment:
 
 ```bash
 # Manual test deployment
@@ -552,42 +538,44 @@ linode-cli ai status
 linode-cli ai destroy  # Reads app name from deploy.yml
 ```
 
-## Publishing Templates
+## Adding Templates to the Plugin
 
-### Local Development
+### Installing Templates for Local Use
 
-Test locally before publishing:
+Once you've developed and tested a template, you can install it for reuse:
 
 ```bash
-# Put template in local directory
-mkdir -p my-templates/my-api
-cp template.yml my-templates/my-api/
+# Install your template
+linode-cli ai templates install ./my-template
 
-# Use local template
-linode-cli ai init ./my-templates/my-api
+# Now use it like a bundled template
+linode-cli ai init my-template --directory deployment
 ```
 
-### Bundled Templates
+Your installed templates are stored at `~/.config/linode-cli.d/ai/templates/` and won't be overwritten during plugin upgrades.
 
-To include in linode-cli-ai:
+### Uninstalling Templates
 
-1. Create template in `linodecli_ai/templates/`
-2. Add to `linodecli_ai/templates/index.yml`:
+```bash
+# Remove an installed template
+linode-cli ai templates uninstall my-template
+```
+
+### Contributing Templates to the Plugin
+
+To add your template to the bundled templates (available to all users):
+
+1. Fork the repository
+2. Add your template to `linodecli_ai/templates/your-template/`
+3. Add entry to `linodecli_ai/templates/index.yml`:
    ```yaml
    templates:
-     - name: my-template
-       path: templates/my-template/template.yml
+     - name: your-template
+       path: templates/your-template/template.yml
    ```
-3. Submit pull request
+4. Submit a pull request
 
-### Remote Registry
-
-Publish to community registry (coming soon):
-
-```bash
-linode-cli ai templates publish my-template \
-  --registry https://registry.example.com
-```
+Your template will ship with the next plugin release!
 
 ## Schema Reference
 
