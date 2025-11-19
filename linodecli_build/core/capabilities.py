@@ -107,21 +107,49 @@ class GPUNvidiaCapability(Capability):
         ])
         
         # Install NVIDIA drivers and container toolkit
+        fragments.packages.append("ubuntu-drivers-common")
+        
         fragments.runcmd.extend([
-            # Install NVIDIA drivers
+            # Install NVIDIA drivers - try specific version first, fallback to autoinstall
+            "export DEBIAN_FRONTEND=noninteractive",
             "apt-get update -qq",
-            "ubuntu-drivers devices || true",
-            "ubuntu-drivers autoinstall || true",
             "",
-            # Wait for driver installation to complete and try to load modules
-            "sleep 5",
-            "for i in 1 2 3 4 5; do modprobe nvidia && break || sleep 2; done",
-            "modprobe nvidia-uvm || true",
+            "# Try to install nvidia-driver-535 (known stable version)",
+            "if apt-get install -y -qq nvidia-driver-535 nvidia-utils-535 2>/dev/null; then",
+            "  echo 'Installed nvidia-driver-535'",
+            "else",
+            "  echo 'Falling back to ubuntu-drivers autoinstall'",
+            "  ubuntu-drivers devices || true",
+            "  ubuntu-drivers autoinstall || true",
+            "fi",
             "",
-            # Verify NVIDIA drivers are loaded (with retries)
-            "for i in 1 2 3 4 5; do nvidia-smi && break || sleep 3; done",
+            "# Wait for driver installation to complete",
+            "sleep 10",
             "",
-            # Install NVIDIA Container Toolkit
+            "# Try to load kernel modules with retries",
+            "for i in 1 2 3 4 5 6 7 8 9 10; do",
+            "  if modprobe nvidia 2>/dev/null; then",
+            "    echo 'nvidia module loaded'",
+            "    break",
+            "  fi",
+            "  echo \"Attempt $i/10: waiting for nvidia module...\"",
+            "  sleep 3",
+            "done",
+            "",
+            "modprobe nvidia-uvm 2>/dev/null || true",
+            "",
+            "# Verify NVIDIA drivers are working",
+            "for i in 1 2 3 4 5; do",
+            "  if nvidia-smi 2>/dev/null; then",
+            "    echo '✓ NVIDIA drivers working'",
+            "    nvidia-smi --query-gpu=name,driver_version --format=csv,noheader || true",
+            "    break",
+            "  fi",
+            "  echo \"Attempt $i/5: waiting for nvidia-smi...\"",
+            "  sleep 5",
+            "done",
+            "",
+            "# Install NVIDIA Container Toolkit",
             "curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg",
             "curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | tee /etc/apt/sources.list.d/nvidia-container-toolkit.list",
             "apt-get update -qq",
@@ -129,8 +157,8 @@ class GPUNvidiaCapability(Capability):
             "nvidia-ctk runtime configure --runtime=docker",
             "systemctl restart docker",
             "",
-            # Wait for Docker to be ready with GPU support
-            "sleep 3",
+            "# Final wait for Docker to be ready with GPU support",
+            "sleep 5",
         ])
         
         return fragments
