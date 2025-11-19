@@ -18,6 +18,7 @@ import yaml
 
 from ..core import capabilities
 from ..core import cloud_init
+from ..core import colors
 from ..core import env as env_core
 from ..core import registry
 from ..core import templates as template_core
@@ -164,7 +165,7 @@ def _cmd_deploy(args, config) -> None:
         or linode_cfg.get("image")
         or "linode/ubuntu24.04"
     )
-    print(f"Creating Linode {linode_type} in {region} (image: {base_image})...")
+    print(f"Creating Linode {colors.value(linode_type)} in {colors.value(region)} (image: {colors.value(base_image)})...")
     
     # Encode user_data as base64 for metadata
     b64_user_data = base64.b64encode(user_data.encode("utf-8")).decode("utf-8")
@@ -216,24 +217,26 @@ def _cmd_deploy(args, config) -> None:
     registry.add_deployment(record)
 
     if args.wait:
-        print("Waiting for Linode to reach running state...")
+        print(colors.info("Waiting for Linode to reach running state..."))
         instance = _wait_for_instance_status(client, linode_id, desired="running")
         record["last_status"] = instance.get('status', 'running')
         registry.update_fields(deployment_id, {"last_status": record["last_status"]})
-        print(
-            "Linode is running. Container start-up can take several minutes; "
+        print(colors.success(
+            "✓ Linode is running. Container start-up can take several minutes; "
             "run `linode-cli build status` to monitor health."
-        )
+        ))
 
     print("")
-    print(f"Deployed {template.display_name} (app: {app_name}, env: {env_name})")
-    print(f"Linode ID: {linode_id}")
-    print(f"IPv4:      {ipv4}")
-    print(f"Hostname:  {hostname}")
+    print(colors.header(f"🚀 Deployed {template.display_name}"))
+    print(colors.dim(f"   App: {app_name}, Env: {env_name}"))
+    print("")
+    print(f"Linode ID: {colors.value(linode_id)}")
+    print(f"IPv4:      {colors.highlight(ipv4)}")
+    print(f"Hostname:  {colors.highlight(hostname)}")
     if password_file:
-        print(f"Root password saved to: {password_file}")
+        print(f"Root password saved to: {colors.value(password_file)}")
         _create_ssh_helper(ipv4, hostname)
-        print(f"SSH helper created: ./connect.sh (run './connect.sh' to connect)")
+        print(f"SSH helper created: {colors.success('./connect.sh')} (run {colors.bold('./connect.sh')} to connect)")
     _print_next_steps(template, hostname)
 
 
@@ -403,14 +406,16 @@ def _print_next_steps(template, hostname: str) -> None:
     summary = guidance.get("summary")
     examples = guidance.get("examples", [])
     print("")
+    print(colors.header("📋 Next Steps:"))
     if summary:
-        print(summary.strip())
+        print(colors.info(summary.strip()))
+        print("")
 
     for example in examples:
         desc = example.get("description")
         command = example.get("command", "").replace("{host}", hostname)
         if desc:
-            print(f"- {desc}:")
+            print(f"  {colors.bold('•')} {desc}:")
         if command:
-            print(command.strip())
+            print(f"    {colors.highlight(command.strip())}")
         print("")

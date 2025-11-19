@@ -9,6 +9,7 @@ from typing import List
 import yaml
 
 from ..core import templates as template_core
+from ..core import colors
 
 
 def _load_template_from_name_or_path(name_or_path: str, version: str | None = None):
@@ -236,38 +237,38 @@ def _interactive_configure(config, deploy_data: dict) -> dict:
     default_type = linode_cfg.get("type_default")
     
     print()
-    print("=== Interactive Configuration ===")
+    print(colors.header("=== Interactive Configuration ==="))
     print()
     
     # Fetch and select region
     try:
-        print("Fetching available regions...")
+        print(colors.info("Fetching available regions..."))
         # call_operation returns (status_code, response_dict)
         status, response = client.call_operation('regions', 'list')
         regions = response.get('data', []) if status == 200 else []
         if regions:
             region = _select_region(regions, default_region)
         else:
-            print(f"Warning: No regions returned. Using template default.")
+            print(colors.warning(f"Warning: No regions returned. Using template default."))
             region = default_region
     except Exception as e:
-        print(f"Warning: Could not fetch regions ({e}). Using template default.")
+        print(colors.warning(f"Warning: Could not fetch regions ({e}). Using template default."))
         region = default_region
     
     # Fetch and select instance type
     try:
         print()
-        print("Fetching available instance types...")
+        print(colors.info("Fetching available instance types..."))
         # call_operation returns (status_code, response_dict)
         status, response = client.call_operation('linodes', 'types')
         types = response.get('data', []) if status == 200 else []
         if types:
             instance_type = _select_instance_type(types, default_type)
         else:
-            print(f"Warning: No types returned. Using template default.")
+            print(colors.warning(f"Warning: No types returned. Using template default."))
             instance_type = default_type
     except Exception as e:
-        print(f"Warning: Could not fetch instance types ({e}). Using template default.")
+        print(colors.warning(f"Warning: Could not fetch instance types ({e}). Using template default."))
         instance_type = default_type
     
     # Update deploy_data with selections
@@ -277,8 +278,8 @@ def _interactive_configure(config, deploy_data: dict) -> dict:
         deploy_data["deploy"]["linode"]["type_default"] = instance_type
     
     print()
-    print(f"✓ Selected region: {region or default_region}")
-    print(f"✓ Selected instance type: {instance_type or default_type}")
+    print(colors.success(f"✓ Selected region: {region or default_region}"))
+    print(colors.success(f"✓ Selected instance type: {instance_type or default_type}"))
     
     return deploy_data
 
@@ -318,7 +319,7 @@ def _select_region(regions, default: str) -> str:
     all_regions = []
     
     print()
-    print("Available Regions:")
+    print(colors.header("Available Regions:"))
     print("=" * 70)
     
     # Display each geographic group
@@ -328,18 +329,18 @@ def _select_region(regions, default: str) -> str:
             continue
             
         print()
-        print(f"{geo}:")
+        print(colors.bold(f"{geo}:"))
         print("-" * 70)
         
         for region in group_regions:
             region_id = region.get('id', 'unknown')
             label = region.get('label', region_id)
             status = region.get('status', 'unknown')
-            status_icon = "✓" if status == "ok" else "✗"
-            default_marker = " (default)" if region_id == default else ""
+            status_icon = colors.success("✓") if status == "ok" else colors.error("✗")
+            default_marker = colors.default(" (default)") if region_id == default else ""
             idx = len(all_regions) + 1
             all_regions.append(region)
-            print(f"{idx:3}. {status_icon} {region_id:20} - {label}{default_marker}")
+            print(f"{idx:3}. {status_icon} {colors.value(region_id):20} - {label}{default_marker}")
     
     # Display other regions if any
     if other:
@@ -360,7 +361,7 @@ def _select_region(regions, default: str) -> str:
     
     # Get user selection
     while True:
-        prompt = f"Select region [1-{len(all_regions)}] (Enter for default: {default}): "
+        prompt = f"\nSelect region [1-{len(all_regions)}] (Enter for default: {colors.default(default)}): "
         choice = input(prompt).strip()
         
         if not choice:
@@ -412,7 +413,7 @@ def _select_instance_type(types, default: str) -> str:
         categorized[category].sort(key=lambda t: t.get('price', {}).get('hourly', 0))
     
     print()
-    print("Available Instance Types:")
+    print(colors.header("Available Instance Types:"))
     print("=" * 90)
     
     all_types = []
@@ -433,7 +434,7 @@ def _select_instance_type(types, default: str) -> str:
             continue
             
         print()
-        print(f"{category}:")
+        print(colors.bold(f"{category}:"))
         print("-" * 90)
         
         # Limit displayed items for large categories
@@ -441,7 +442,7 @@ def _select_instance_type(types, default: str) -> str:
         
         for t in category_types[:display_limit]:
             type_id = t.get('id', 'unknown')
-            default_marker = " (default)" if type_id == default else ""
+            default_marker = colors.default(" (default)") if type_id == default else ""
             idx = len(all_types) + 1
             all_types.append(t)
             price = t.get('price', {}).get('hourly', 0)
@@ -451,19 +452,19 @@ def _select_instance_type(types, default: str) -> str:
             gpus = t.get('gpus', 0)
             
             # Show GPU count for GPU instances
-            gpu_info = f"  {gpus} GPUs" if gpus > 0 else ""
+            gpu_info = colors.info(f"  {gpus} GPUs") if gpus > 0 else ""
             
-            print(f"{idx:3}. {type_id:30} ${price:7.2f}/hr  "
+            print(f"{idx:3}. {colors.value(type_id):30} {colors.info(f'${price:7.2f}/hr')}  "
                   f"{memory:6}MB RAM  {vcpus:2} vCPUs  {disk:8}MB{gpu_info}{default_marker}")
         
         if len(category_types) > display_limit:
-            print(f"     ... and {len(category_types) - display_limit} more")
+            print(colors.dim(f"     ... and {len(category_types) - display_limit} more"))
     
     print("=" * 90)
     
     # Get user selection
     while True:
-        prompt = f"Select instance type [1-{len(all_types)}] (Enter for default: {default}): "
+        prompt = f"\nSelect instance type [1-{len(all_types)}] (Enter for default: {colors.default(default)}): "
         choice = input(prompt).strip()
         
         if not choice:
