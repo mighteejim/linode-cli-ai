@@ -7,7 +7,6 @@ from pathlib import Path
 
 import yaml
 
-from ..core import linode_api
 from ..core import registry
 
 
@@ -58,14 +57,14 @@ def _cmd_destroy(args, config) -> None:
         print("Aborted.")
         return
 
-    api = linode_api.LinodeAPI(config)
+    client = config.client
     for dep in deployments:
         linode_id = dep.get("linode_id")
         if linode_id:
             print(f"Deleting Linode {linode_id}...")
             try:
-                api.delete_instance(linode_id)
-            except linode_api.LinodeAPIError as exc:
+                client.linode.instances.delete(linode_id)
+            except Exception as exc:
                 print(f"Warning: failed to delete Linode {linode_id}: {exc}")
         registry.remove_deployment(dep["deployment_id"])
         print(f"Removed deployment {dep['deployment_id']}")

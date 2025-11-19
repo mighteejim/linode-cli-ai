@@ -7,7 +7,6 @@ from typing import Dict, List, Tuple
 from urllib import error as url_error
 from urllib import request as url_request
 
-from ..core import linode_api
 from ..core import registry
 
 
@@ -26,11 +25,11 @@ def _cmd_status(args, config) -> None:
         print("No deployments found.")
         return
 
-    api = linode_api.LinodeAPI(config)
+    client = config.client
     rows: List[Tuple[str, str, str, str, str]] = []
 
     for dep in deployments:
-        status, detail = _fetch_status(api, dep, skip_health=args.no_health)
+        status, detail = _fetch_status(client, dep, skip_health=args.no_health)
         registry.update_fields(dep["deployment_id"], {"last_status": status})
         url = _format_url(dep)
         rows.append((dep["app_name"], dep["env"], dep.get("region", "?"), status, url))
@@ -45,16 +44,16 @@ def _cmd_status(args, config) -> None:
         _print_table(("APP", "ENV", "REGION", "STATUS", "URL"), rows)
 
 
-def _fetch_status(api: linode_api.LinodeAPI, deployment: Dict, skip_health: bool) -> Tuple[str, str]:
+def _fetch_status(client, deployment: Dict, skip_health: bool) -> Tuple[str, str]:
     try:
-        instance = api.get_instance(deployment["linode_id"])
-    except linode_api.LinodeAPIError as exc:
+        instance = client.linode.instances.get(deployment["linode_id"])
+    except Exception as exc:
         message = str(exc)
         if "Not Found" in message or "404" in message:
             return "missing", "Linode instance not found"
         return "error", message
 
-    api_status = instance.get("status", "unknown")
+    api_status = instance.status
     mapped = _map_status(api_status)
     detail = f"Linode status: {api_status}"
     if mapped == "running" and not skip_health:

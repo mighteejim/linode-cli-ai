@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import datetime as dt
 import re
 import secrets
@@ -18,7 +19,6 @@ import yaml
 from ..core import capabilities
 from ..core import cloud_init
 from ..core import env as env_core
-from ..core import linode_api
 from ..core import registry
 from ..core import templates as template_core
 
@@ -151,7 +151,8 @@ def _cmd_deploy(args, config) -> None:
     )
     user_data = cloud_init.generate_cloud_init(config_obj)
 
-    api = linode_api.LinodeAPI(config)
+    # Use native CLI client
+    client = config.client
     root_pass, password_file = _determine_root_password(args.root_pass)
     deployment_id = str(uuid.uuid4())
     timestamp = dt.datetime.utcnow().strftime("%m%d%H%M")
@@ -164,18 +165,25 @@ def _cmd_deploy(args, config) -> None:
         or "linode/ubuntu24.04"
     )
     print(f"Creating Linode {linode_type} in {region} (image: {base_image})...")
-    instance = api.create_instance(
+    
+    # Encode user_data as base64 for metadata
+    b64_user_data = base64.b64encode(user_data.encode("utf-8")).decode("utf-8")
+    
+    # Create instance using native client
+    instance = client.linode.instances.create(
+        ltype=linode_type,
         region=region,
-        linode_type=linode_type,
         image=base_image,
         label=label,
         tags=tags,
-        user_data=user_data,
+        group="build",
         root_pass=root_pass,
+        metadata={"user_data": b64_user_data},
     )
-    linode_id = instance["id"]
+    
+    linode_id = instance.id
     ipv4 = _primary_ipv4(instance)
-    hostname = api.derive_hostname(ipv4)
+    hostname = _derive_hostname(ipv4)
 
     record = {
         "deployment_id": deployment_id,
@@ -193,14 +201,14 @@ def _cmd_deploy(args, config) -> None:
         "external_port": external_port,
         "internal_port": internal_port,
         "created_at": dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "last_status": instance.get("status"),
+        "last_status": instance.status,
     }
     registry.add_deployment(record)
 
     if args.wait:
         print("Waiting for Linode to reach running state...")
-        instance = api.wait_for_status(linode_id, desired="running")
-        record["last_status"] = instance.get("status")
+        instance = _wait_for_instance_status(client, linode_id, desired="running")
+        record["last_status"] = instance.status
         registry.update_fields(deployment_id, {"last_status": record["last_status"]})
         print(
             "Linode is running. Container start-up can take several minutes; "
@@ -234,11 +242,30 @@ def _read_env_file(path: str, template) -> Dict[str, str]:
     return env_values
 
 
-def _primary_ipv4(instance: Dict) -> str:
-    ipv4_list = instance.get("ipv4") or []
-    if isinstance(ipv4_list, list) and ipv4_list:
-        return ipv4_list[0]
-    raise linode_api.LinodeAPIError("Instance response missing IPv4 address.")
+def _primary_ipv4(instance) -> str:
+    """Extract primary IPv4 from instance object."""
+    if hasattr(instance, 'ipv4') and instance.ipv4:
+        return instance.ipv4[0]
+    raise RuntimeError("Instance missing IPv4 address.")
+
+
+def _derive_hostname(ipv4: str) -> str:
+    """Derive hostname from IPv4 address."""
+    octets = ipv4.split(".")
+    return f"{'-'.join(octets)}.ip.linodeusercontent.com"
+
+
+def _wait_for_instance_status(client, instance_id: int, desired: str = "running", timeout: int = 600, poll: int = 10):
+    """Poll Linode until it reaches the desired status or timeout."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        instance = client.linode.instances.get(instance_id)
+        if instance.status == desired:
+            return instance
+        time.sleep(poll)
+    raise RuntimeError(
+        f"Linode {instance_id} did not reach status {desired} within {timeout}s"
+    )
 
 
 _SAFE_CHAR_PATTERN = re.compile(r"[^A-Za-z0-9_.-]")
