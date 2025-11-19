@@ -63,16 +63,10 @@ class DockerCapability(Capability):
     def get_fragments(self) -> CapabilityFragments:
         fragments = CapabilityFragments()
         
-        # Install Docker using official convenience script
-        fragments.runcmd.extend([
-            # Install prerequisites
-            "apt-get update -qq",
-            "apt-get install -y ca-certificates curl",
-            "",
-            # Install Docker
-            "curl -fsSL https://get.docker.com -o get-docker.sh",
-            "sh get-docker.sh",
-            "rm get-docker.sh",
+        # Install Docker via apt packages
+        fragments.packages.extend([
+            "docker.io",
+            "docker-compose",
         ])
         
         # Configure daemon.json if optimization is requested
@@ -84,7 +78,7 @@ class DockerCapability(Capability):
                 "content": '{"max-concurrent-downloads": 10}\n',
             })
         
-        # Start Docker (after any config changes)
+        # Ensure Docker is enabled and started
         fragments.runcmd.extend([
             "systemctl enable docker",
             "systemctl start docker",
