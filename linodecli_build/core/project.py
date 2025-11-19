@@ -1,6 +1,6 @@
 """Project manifest helpers.
 
-NOTE: This module is deprecated. The CLI no longer uses ai.linode.yml manifests.
+NOTE: This module is deprecated. The CLI no longer uses build.linode.yml manifests.
 Instead, deploy.yml files contain the complete deployment configuration.
 Kept for backward compatibility only.
 """
@@ -13,7 +13,7 @@ from typing import Dict
 import yaml
 
 # Deprecated: CLI now uses deploy.yml instead
-DEFAULT_MANIFEST = "ai.linode.yml"
+DEFAULT_MANIFEST = "build.linode.yml"
 
 
 class ProjectManifestError(RuntimeError):
@@ -23,7 +23,7 @@ class ProjectManifestError(RuntimeError):
 def load_manifest(path: str | None = None) -> Dict:
     """Load project manifest.
     
-    NOTE: This function is deprecated. The CLI no longer uses ai.linode.yml.
+    NOTE: This function is deprecated. The CLI no longer uses build.linode.yml.
     Deployments now read from deploy.yml which contains the complete configuration.
     Kept for backward compatibility only.
     """

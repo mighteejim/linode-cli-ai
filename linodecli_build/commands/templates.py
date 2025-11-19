@@ -15,7 +15,7 @@ from . import scaffold as scaffold_cmd
 
 
 def register(subparsers: argparse._SubParsersAction, _config) -> None:
-    parser = subparsers.add_parser("templates", help="List and inspect AI templates")
+    parser = subparsers.add_parser("templates", help="List and inspect templates")
     parser.set_defaults(func=lambda args: parser.print_help())
     templates_subparsers = parser.add_subparsers(dest="templates_cmd")
 

@@ -83,7 +83,7 @@ class LLMInstructionsGenerator:
     def _render_task_description(self) -> str:
         return """## Task
 
-Complete the template.yml file for this service following the linode-cli-ai template system structure.
+Complete the template.yml file for this service following the linode-cli-build template system structure.
 
 Your goal is to create a production-ready template that:
 - Uses the capabilities system for declarative requirements
@@ -98,7 +98,7 @@ Your goal is to create a production-ready template that:
 
 ### Overview
 
-The linode-cli-ai template system allows users to deploy AI services to Linode cloud instances
+The linode-cli-build template system allows users to deploy services to Linode cloud instances
 with minimal configuration. Templates define:
 
 1. **What to deploy**: Container image, ports, environment variables

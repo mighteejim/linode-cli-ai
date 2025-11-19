@@ -265,7 +265,7 @@ def _gather_user_requirements(template_name: str) -> Dict[str, Any]:
     
     # Service description
     service_desc = input("What service do you want to deploy?\n> ").strip()
-    user_input['service_description'] = service_desc or "AI service"
+    user_input['service_description'] = service_desc or "application service"
     
     # GPU requirement
     gpu_input = input("\nDoes it require GPU? [y/n]: ").strip().lower()
