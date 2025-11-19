@@ -212,6 +212,8 @@ def _cmd_deploy(args, config) -> None:
     print(f"Hostname:  {hostname}")
     if password_file:
         print(f"Root password saved to: {password_file}")
+        _create_ssh_helper(ipv4, hostname)
+        print(f"SSH helper created: ./connect.sh (run './connect.sh' to connect)")
     _print_next_steps(template, hostname)
 
 
@@ -275,6 +277,55 @@ def _determine_root_password(provided: Optional[str]):
     password_path = Path.cwd() / "linode-root-password.txt"
     password_path.write_text(password + "\n", encoding="utf-8")
     return password, password_path
+
+
+def _create_ssh_helper(ipv4: str, hostname: str) -> None:
+    """Create a connect.sh script to easily SSH into the Linode."""
+    connect_script = Path.cwd() / "connect.sh"
+    
+    script_content = f"""#!/bin/bash
+# SSH connection helper for {hostname}
+
+HOST="{ipv4}"
+PASSWORD_FILE="linode-root-password.txt"
+
+# Check if sshpass is available
+if command -v sshpass &> /dev/null; then
+    # Use sshpass for automatic login
+    if [ -f "$PASSWORD_FILE" ]; then
+        PASSWORD=$(cat "$PASSWORD_FILE")
+        echo "Connecting to root@$HOST..."
+        sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@$HOST
+    else
+        echo "Error: $PASSWORD_FILE not found"
+        exit 1
+    fi
+else
+    # sshpass not available, show manual instructions
+    echo "Connecting to root@$HOST..."
+    echo ""
+    if [ -f "$PASSWORD_FILE" ]; then
+        echo "Root password (will be copied to clipboard if pbcopy available):"
+        cat "$PASSWORD_FILE"
+        
+        # Try to copy to clipboard (macOS)
+        if command -v pbcopy &> /dev/null; then
+            cat "$PASSWORD_FILE" | tr -d '\\n' | pbcopy
+            echo ""
+            echo "✓ Password copied to clipboard!"
+        fi
+    fi
+    echo ""
+    echo "Tip: Install sshpass for automatic login:"
+    echo "  macOS: brew install hudochenkov/sshpass/sshpass"
+    echo "  Linux: sudo apt install sshpass"
+    echo ""
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@$HOST
+fi
+"""
+    
+    connect_script.write_text(script_content, encoding="utf-8")
+    connect_script.chmod(0o755)  # Make executable
 
 
 def _generate_root_password(length: int = 24) -> str:
