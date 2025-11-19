@@ -1,4 +1,4 @@
-# 🚀 linode-cli build Plugin
+# 🚀 linode-cli build
 
 **Deploy applications to Linode in minutes with simple, declarative templates.**
 
