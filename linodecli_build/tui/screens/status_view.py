@@ -92,6 +92,31 @@ class StatusViewScreen(Screen):
         height: 1;
         background: $panel;
     }
+    
+    #api-status {
+        height: auto;
+        padding: 1;
+        background: $panel;
+        border: solid $accent;
+        margin-bottom: 1;
+    }
+    
+    #api-status-grid {
+        height: auto;
+    }
+    
+    .api-status-row {
+        height: 1;
+    }
+    
+    .api-endpoint {
+        width: 40;
+        color: $text-muted;
+    }
+    
+    .api-status-indicator {
+        width: 1fr;
+    }
     """
     
     def __init__(
@@ -120,6 +145,13 @@ class StatusViewScreen(Screen):
         self.is_monitoring = True
         self.update_task = None
         self.auto_refresh = True
+        # Track API call status
+        self.api_status = {
+            'linode_api': {'status': 'pending', 'last_code': None, 'last_error': None},
+            'build_monitor_status': {'status': 'pending', 'last_code': None, 'last_error': None},
+            'build_monitor_logs': {'status': 'pending', 'last_code': None, 'last_error': None},
+            'build_monitor_issues': {'status': 'pending', 'last_code': None, 'last_error': None},
+        }
     
     def compose(self):
         """Compose the status view screen."""
@@ -155,6 +187,23 @@ class StatusViewScreen(Screen):
                     with Horizontal(classes="info-row"):
                         yield Static("[dim]Directory:[/]", classes="info-label")
                         yield Static(self.deployment_directory or "N/A", classes="info-value", id="info-directory")
+            
+            # API Status Section
+            with Container(id="api-status"):
+                yield Static("[bold cyan]🔌 API Status[/]", id="api-status-title")
+                with Container(id="api-status-grid"):
+                    with Horizontal(classes="api-status-row"):
+                        yield Static("[dim]Linode API (instance data):[/]", classes="api-endpoint")
+                        yield Static("⟳ Connecting...", classes="api-status-indicator", id="api-linode")
+                    with Horizontal(classes="api-status-row"):
+                        yield Static("[dim]Build Monitor /status:[/]", classes="api-endpoint")
+                        yield Static("⟳ Connecting...", classes="api-status-indicator", id="api-bm-status")
+                    with Horizontal(classes="api-status-row"):
+                        yield Static("[dim]Build Monitor /logs:[/]", classes="api-endpoint")
+                        yield Static("⟳ Connecting...", classes="api-status-indicator", id="api-bm-logs")
+                    with Horizontal(classes="api-status-row"):
+                        yield Static("[dim]Build Monitor /issues:[/]", classes="api-endpoint")
+                        yield Static("⟳ Connecting...", classes="api-status-indicator", id="api-bm-issues")
             
             # Panels container (horizontal layout)
             with Horizontal(id="panels-container"):
@@ -200,6 +249,10 @@ class StatusViewScreen(Screen):
             instance = await self.api_client.get_instance(self.instance_id)
             
             if instance:
+                # Update API status - Linode API success
+                self.api_status['linode_api'] = {'status': 'success', 'last_code': 200, 'last_error': None}
+                self.query_one("#api-linode", Static).update("[green]✓ 200 OK[/]")
+                
                 # Update instance panel
                 instance_panel = self.query_one(InstancePanel)
                 instance_panel.instance_data = instance
@@ -247,10 +300,23 @@ class StatusViewScreen(Screen):
                 # Fetch Build Monitor logs if IPv4 available
                 log_viewer = self.query_one(LogViewer)
                 if ipv4_addr:
+                    # Try to fetch Build Monitor status
+                    bm_status = await self.api_client.fetch_buildwatch_status(ipv4_addr)
+                    if bm_status:
+                        self.api_status['build_monitor_status'] = {'status': 'success', 'last_code': 200, 'last_error': None}
+                        self.query_one("#api-bm-status", Static).update(f"[green]✓ 200 OK[/] [dim]http://{ipv4_addr}:9090/status[/]")
+                    else:
+                        self.api_status['build_monitor_status'] = {'status': 'error', 'last_code': 'timeout', 'last_error': 'Connection timeout'}
+                        self.query_one("#api-bm-status", Static).update(f"[yellow]⚠ Timeout[/] [dim]http://{ipv4_addr}:9090/status[/]")
+                    
                     # Try to fetch logs from Build Monitor
                     logs = await self.api_client.fetch_buildwatch_events(ipv4_addr, limit=50)
                     
                     if logs:
+                        # Update API status - logs success
+                        self.api_status['build_monitor_logs'] = {'status': 'success', 'last_code': 200, 'last_error': None}
+                        self.query_one("#api-bm-logs", Static).update(f"[green]✓ 200 OK[/] [dim]({len(logs)} lines)[/]")
+                        
                         # Clear old placeholder messages
                         if log_viewer.logs and "[dim]No logs available" in str(log_viewer.logs[0]):
                             log_viewer.clear()
@@ -276,6 +342,10 @@ class StatusViewScreen(Screen):
                         # Fetch and display issues
                         issues = await self.api_client.fetch_buildwatch_issues(ipv4_addr)
                         if issues:
+                            # Update API status - issues success
+                            self.api_status['build_monitor_issues'] = {'status': 'success', 'last_code': 200, 'last_error': None}
+                            self.query_one("#api-bm-issues", Static).update(f"[green]✓ 200 OK[/] [dim]({len(issues)} issues)[/]")
+                            
                             # Show unresolved issues
                             unresolved = [i for i in issues if not i.get('resolved', False)]
                             if unresolved:
@@ -297,15 +367,32 @@ class StatusViewScreen(Screen):
                                     
                                     if recommendation:
                                         log_viewer.add_log_line(f"    → {recommendation}")
+                        else:
+                            # No issues
+                            self.api_status['build_monitor_issues'] = {'status': 'success', 'last_code': 200, 'last_error': None}
+                            self.query_one("#api-bm-issues", Static).update(f"[green]✓ 200 OK[/] [dim](0 issues)[/]")
                     else:
+                        # Build Monitor logs not available
+                        self.api_status['build_monitor_logs'] = {'status': 'error', 'last_code': 'timeout', 'last_error': 'Connection timeout or service not ready'}
+                        self.query_one("#api-bm-logs", Static).update(f"[yellow]⚠ No data[/] [dim]http://{ipv4_addr}:9090/logs[/]")
+                        
                         # Build Monitor service might not be ready yet
                         if not log_viewer.logs:
                             log_viewer.add_log_line("[dim]Waiting for Build Monitor service to start...[/]")
                             log_viewer.add_log_line("[dim]Logs will appear here as they're generated.[/]")
                 else:
+                    # No IPv4 yet - instance still provisioning
+                    self.query_one("#api-bm-status", Static).update("[dim]⟳ No IPv4 (instance provisioning)[/]")
+                    self.query_one("#api-bm-logs", Static).update("[dim]⟳ No IPv4 (instance provisioning)[/]")
+                    self.query_one("#api-bm-issues", Static).update("[dim]⟳ No IPv4 (instance provisioning)[/]")
+                    
                     # No IPv4 or instance not running
                     if not log_viewer.logs:
                         log_viewer.add_log_line("[dim]No logs available yet. Logs will appear here as they're generated.[/]")
+            else:
+                # Linode API failed
+                self.api_status['linode_api'] = {'status': 'error', 'last_code': 'error', 'last_error': 'Failed to fetch instance'}
+                self.query_one("#api-linode", Static).update(f"[red]✕ Failed[/] [dim]Instance {self.instance_id}[/]")
         
         except Exception as e:
             self.notify(f"Error updating status: {e}", severity="error")
