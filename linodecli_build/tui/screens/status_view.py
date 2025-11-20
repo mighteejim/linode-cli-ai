@@ -113,9 +113,9 @@ class StatusViewScreen(Screen):
         self.app_name = app_name
         self.environment = environment
         self.deployment_id = deployment_id
-        self.region = region
-        self.plan = plan
-        self.directory = directory
+        self.deployment_region = region
+        self.deployment_plan = plan
+        self.deployment_directory = directory
         self.last_update = time.time()
         self.is_monitoring = True
         self.update_task = None
@@ -145,16 +145,16 @@ class StatusViewScreen(Screen):
                         yield Static(f"{self.app_name} ({self.environment})", classes="info-value", id="info-app")
                     with Horizontal(classes="info-row"):
                         yield Static("[dim]Plan Type:[/]", classes="info-label")
-                        yield Static(self.plan or "N/A", classes="info-value", id="info-plan")
+                        yield Static(self.deployment_plan or "N/A", classes="info-value", id="info-plan")
                     with Horizontal(classes="info-row"):
                         yield Static("[dim]Region:[/]", classes="info-label")
-                        yield Static(self.region or "N/A", classes="info-value", id="info-region")
+                        yield Static(self.deployment_region or "N/A", classes="info-value", id="info-region")
                     with Horizontal(classes="info-row"):
                         yield Static("[dim]Status:[/]", classes="info-label")
                         yield Static("⟳ Loading...", classes="info-value", id="info-status")
                     with Horizontal(classes="info-row"):
                         yield Static("[dim]Directory:[/]", classes="info-label")
-                        yield Static(self.directory or "N/A", classes="info-value", id="info-directory")
+                        yield Static(self.deployment_directory or "N/A", classes="info-value", id="info-directory")
             
             # Panels container (horizontal layout)
             with Horizontal(id="panels-container"):
