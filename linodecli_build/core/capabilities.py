@@ -294,18 +294,21 @@ class CustomPackagesCapability(Capability):
 
 
 class BuildWatchCapability(Capability):
-    """Provides BuildWatch container monitoring service.
+    """Provides Build Monitor service for deployment and container monitoring.
     
-    BuildWatch monitors Docker events in real-time, detects issues,
-    and provides an HTTP API for status and logs.
+    Build Monitor streams cloud-init progress, docker logs, and detects issues
+    throughout the entire deployment lifecycle:
+    
+    Phase 1: Cloud-Init - Stream /var/log/cloud-init-output.log
+    Phase 2: Container Startup - Stream docker logs during first boot
+    Phase 3: Runtime - Continue streaming logs and detect issues
     
     The service script is downloaded from GitHub to avoid exceeding
     cloud-init's 16KB metadata limit.
     """
     
-    # GitHub raw URL for build-watcher.py script
-    # TODO: Update to 'main' branch once merged
-    SCRIPT_URL = "https://raw.githubusercontent.com/mighteejim/linode-cli-build/tui/scripts/build-watcher.py"
+    # GitHub raw URL for build-monitor.py script
+    SCRIPT_URL = "https://raw.githubusercontent.com/mighteejim/linode-cli-build/tui/scripts/build-monitor.py"
     
     def __init__(self, deployment_id: str, app_name: str, port: int = 9090, 
                  log_retention_days: int = 7, enable_metrics: bool = True):
@@ -341,21 +344,22 @@ class BuildWatchCapability(Capability):
         fragments = CapabilityFragments()
         
         # Write systemd unit and logrotate config (small files - inline is OK)
-        # Note: BuildWatch runs completely independently - no Docker dependencies in systemd
+        # Note: Build Monitor runs completely independently - no Docker dependencies in systemd
         systemd_unit = f"""[Unit]
-Description=BuildWatch - Container Monitoring Service
+Description=Build Monitor - Deployment and Container Monitoring
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/build-watcher
+ExecStart=/usr/local/bin/build-monitor
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
 Environment="BUILD_DEPLOYMENT_ID={self.deployment_id}"
 Environment="BUILD_APP_NAME={self.app_name}"
+Environment="BUILD_CONTAINER_NAME=app"
 
 # Don't restart on success - only on actual failures
 StartLimitBurst=5
@@ -365,7 +369,7 @@ StartLimitIntervalSec=300
 WantedBy=multi-user.target
 """
         
-        logrotate_config = """/var/log/build-watcher/*.log {
+        logrotate_config = """/var/log/build-monitor/*.log {
     daily
     rotate 7
     compress
@@ -378,64 +382,64 @@ WantedBy=multi-user.target
         
         fragments.write_files.extend([
             {
-                "path": "/etc/systemd/system/build-watcher.service",
+                "path": "/etc/systemd/system/build-monitor.service",
                 "permissions": "0644",
                 "owner": "root:root",
                 "content": systemd_unit,
             },
             {
-                "path": "/etc/logrotate.d/build-watcher",
+                "path": "/etc/logrotate.d/build-monitor",
                 "permissions": "0644",
                 "owner": "root:root",
                 "content": logrotate_config,
             },
         ])
         
-        # Download and setup BuildWatch service
+        # Download and setup Build Monitor service
         fragments.runcmd.extend([
-            "# Create BuildWatch directories",
-            "mkdir -p /var/log/build-watcher",
-            "mkdir -p /var/lib/build-watcher",
+            "# Create Build Monitor directories",
+            "mkdir -p /var/log/build-monitor",
             "",
-            "# Download BuildWatch service script from GitHub with retry",
-            "echo 'Downloading BuildWatch service...'",
+            "# Download Build Monitor service script from GitHub with retry",
+            "echo 'Downloading Build Monitor service...'",
             "for i in 1 2 3 4 5; do",
-            f"  if curl -fsSL --connect-timeout 10 --max-time 30 {self.SCRIPT_URL} -o /usr/local/bin/build-watcher; then",
-            "    echo 'BuildWatch script downloaded successfully'",
+            f"  if curl -fsSL --connect-timeout 10 --max-time 30 {self.SCRIPT_URL} -o /usr/local/bin/build-monitor; then",
+            "    echo 'Build Monitor script downloaded successfully'",
             "    break",
             "  else",
-            "    echo \"Attempt $i/5: Failed to download BuildWatch script, retrying...\"",
+            "    echo \"Attempt $i/5: Failed to download Build Monitor script, retrying...\"",
             "    sleep 5",
             "  fi",
             "done",
             "",
             "# Verify the script was downloaded",
-            "if [ ! -f /usr/local/bin/build-watcher ]; then",
-            "  echo 'ERROR: BuildWatch script not found after download attempts' >&2",
-            "  echo 'BuildWatch will not be available for this deployment' >&2",
-            "  exit 0  # Don't fail cloud-init, just skip BuildWatch",
+            "if [ ! -f /usr/local/bin/build-monitor ]; then",
+            "  echo 'ERROR: Build Monitor script not found after download attempts' >&2",
+            "  echo 'Build Monitor will not be available for this deployment' >&2",
+            "  exit 0  # Don't fail cloud-init, just skip Build Monitor",
             "fi",
             "",
             "# Make script executable and verify it's valid Python",
-            "chmod +x /usr/local/bin/build-watcher",
-            "if ! head -1 /usr/local/bin/build-watcher | grep -q python; then",
+            "chmod +x /usr/local/bin/build-monitor",
+            "if ! head -1 /usr/local/bin/build-monitor | grep -q python; then",
             "  echo 'ERROR: Downloaded file does not appear to be a Python script' >&2",
-            "  rm -f /usr/local/bin/build-watcher",
+            "  rm -f /usr/local/bin/build-monitor",
             "  exit 0  # Don't fail cloud-init",
             "fi",
             "",
-            "# Enable and start BuildWatch service",
+            "# Enable and start Build Monitor service",
             "systemctl daemon-reload",
-            "systemctl enable build-watcher",
-            "systemctl start build-watcher",
+            "systemctl enable build-monitor",
+            "systemctl start build-monitor",
             "sleep 2",
             "",
             "# Verify service started",
-            "if systemctl is-active --quiet build-watcher; then",
-            "  echo '✓ BuildWatch monitoring started successfully'",
+            "if systemctl is-active --quiet build-monitor; then",
+            "  echo '✓ Build Monitor started successfully'",
+            "  echo '✓ Now streaming cloud-init and container logs'",
             "else",
-            "  echo '✗ BuildWatch failed to start' >&2",
-            "  journalctl -u build-watcher -n 20 --no-pager",
+            "  echo '✗ Build Monitor failed to start' >&2",
+            "  journalctl -u build-monitor -n 20 --no-pager",
             "fi",
         ])
         
