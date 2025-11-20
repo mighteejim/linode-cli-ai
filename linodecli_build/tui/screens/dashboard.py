@@ -102,12 +102,12 @@ class DashboardScreen(Screen):
         
         with Horizontal(id="header-info"):
             yield Static(
-                f"v{PLUGIN_VERSION}",
+                "🚀 Linode Build - Deployments",
                 id="header-left",
                 classes="header-section"
             )
             yield Static(
-                "🚀 Linode Build - Deployments",
+                f"build-tui (v{PLUGIN_VERSION})",
                 id="header-center",
                 classes="header-section"
             )
