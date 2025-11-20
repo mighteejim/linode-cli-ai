@@ -37,6 +37,24 @@ class StatusViewScreen(Screen):
         height: 1;
         background: $primary;
         padding: 0 1;
+        layout: horizontal;
+    }
+    
+    .header-section {
+        width: 1fr;
+        content-align: center middle;
+    }
+    
+    #header-left {
+        content-align: left middle;
+    }
+    
+    #header-center {
+        content-align: center middle;
+    }
+    
+    #header-right {
+        content-align: right middle;
     }
     
     #main-content {
@@ -146,13 +164,25 @@ class StatusViewScreen(Screen):
     
     def compose(self):
         """Compose the status view screen."""
-        yield Header(show_clock=True)
+        # Header with version, title, and clock (matching dashboard)
+        from ... import PLUGIN_VERSION
         
-        # Header - ultra compact
-        yield Static(
-            f"{self.app_name} ({self.environment})  [dim]Uptime:[/] Running",
-            id="header-info"
-        )
+        with Horizontal(id="header-info"):
+            yield Static(
+                f"{self.app_name} ({self.environment})",
+                id="header-left",
+                classes="header-section"
+            )
+            yield Static(
+                f"build-tui (v{PLUGIN_VERSION})",
+                id="header-center",
+                classes="header-section"
+            )
+            yield Static(
+                "",  # Will be updated with time in on_mount
+                id="header-right",
+                classes="header-section"
+            )
         
         # Main scrollable content
         with ScrollableContainer(id="main-content"):
@@ -192,9 +222,24 @@ class StatusViewScreen(Screen):
         # Start animation timer for blinking status indicators
         self._animation_timer = self.set_interval(0.5, self._animate_status)
         
+        # Start clock update timer
+        self._clock_timer = self.set_interval(1.0, self._update_clock)
+        # Initial clock update
+        self._update_clock()
+        
         self.update_task = self.set_interval(3.0, self.update_status)
         # Initial update
         await self.update_status()
+    
+    def _update_clock(self):
+        """Update the clock in the header."""
+        try:
+            from datetime import datetime
+            header_right = self.query_one("#header-right", Static)
+            current_time = datetime.now().strftime("%H:%M:%S")
+            header_right.update(current_time)
+        except Exception:
+            pass  # Ignore if widget not found
     
     def _animate_status(self):
         """Toggle blink state for status indicators."""

@@ -143,7 +143,6 @@ class DashboardScreen(Screen):
         # Set focus to the DataTable
         table = self.query_one(DataTable)
         table.focus()
-        self.notify(f"DEBUG: Table focused, has {len(self.deployments)} rows", timeout=3)
         # Start animation timer for blinking status indicators
         self._animation_timer = self.set_interval(0.5, self._animate_status)
         # Start auto-refresh timer for API updates
@@ -279,14 +278,11 @@ class DashboardScreen(Screen):
     
     def on_key(self, event):
         """Handle key presses and route to appropriate actions."""
-        self.notify(f"DEBUG: Key pressed: {event.key}", timeout=2)
         if event.key == "enter":
-            self.notify("DEBUG: Enter key detected, calling action!", timeout=3)
             self.action_view_selected()
     
     def action_view_selected(self):
         """View the selected deployment."""
-        self.notify("DEBUG: action_view_selected called", timeout=2)
         table = self.query_one(DataTable)
         
         if not self.deployments:
