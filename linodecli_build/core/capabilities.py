@@ -307,15 +307,32 @@ class BuildWatchCapability(Capability):
     # TODO: Update to 'main' branch once merged
     SCRIPT_URL = "https://raw.githubusercontent.com/mighteejim/linode-cli-build/tui/scripts/build-watcher.py"
     
-    def __init__(self, deployment_id: str, app_name: str):
+    def __init__(self, deployment_id: str, app_name: str, port: int = 9090, 
+                 log_retention_days: int = 7, enable_metrics: bool = True):
         """Initialize BuildWatch capability.
         
         Args:
             deployment_id: Unique deployment identifier
             app_name: Application name
+            port: HTTP API port (default: 9090)
+            log_retention_days: Log rotation days (default: 7)
+            enable_metrics: Enable resource metrics (default: True)
         """
+        # Validate inputs
+        if not deployment_id:
+            raise ValueError("BuildWatch requires deployment_id")
+        if not app_name:
+            raise ValueError("BuildWatch requires app_name")
+        if not (1024 <= port <= 65535):
+            raise ValueError(f"Invalid port {port}, must be 1024-65535")
+        if not (1 <= log_retention_days <= 365):
+            raise ValueError(f"Invalid log_retention_days {log_retention_days}, must be 1-365")
+        
         self.deployment_id = deployment_id
         self.app_name = app_name
+        self.port = port
+        self.log_retention_days = log_retention_days
+        self.enable_metrics = enable_metrics
     
     def name(self) -> str:
         return "buildwatch"
@@ -441,16 +458,26 @@ class CapabilityManager:
         "redis": RedisCapability,
         "postgresql-14": lambda: PostgreSQLCapability("14"),
         "postgresql-15": lambda: PostgreSQLCapability("15"),
+        "buildwatch": lambda config: BuildWatchCapability(
+            deployment_id=config.get("deployment_id"),
+            app_name=config.get("app_name"),
+            port=config.get("port", 9090),
+            log_retention_days=config.get("log_retention_days", 7),
+            enable_metrics=config.get("enable_metrics", True)
+        ),
     }
     
     def __init__(self):
         self.capabilities: List[Capability] = []
     
-    def add_from_config(self, capabilities_config: Dict[str, Any]) -> None:
+    def add_from_config(self, capabilities_config: Dict[str, Any], 
+                       deployment_id: str = None, app_name: str = None) -> None:
         """Add capabilities from template configuration.
         
         Args:
             capabilities_config: The 'capabilities' section from template.yml
+            deployment_id: Deployment ID for context-aware capabilities (e.g., BuildWatch)
+            app_name: Application name for context-aware capabilities
         """
         runtime = capabilities_config.get("runtime")
         features = capabilities_config.get("features", [])
@@ -468,7 +495,29 @@ class CapabilityManager:
         
         # Add feature capabilities
         for feature in features:
-            self.add_capability(feature)
+            if isinstance(feature, str):
+                # Simple feature: "buildwatch"
+                feature_name = feature
+                feature_config = {}
+            elif isinstance(feature, dict):
+                # Configured feature: {"name": "buildwatch", "config": {...}}
+                feature_name = feature.get("name")
+                feature_config = feature.get("config", {})
+            else:
+                continue
+            
+            # Inject deployment context for BuildWatch
+            if feature_name == "buildwatch":
+                feature_config["deployment_id"] = deployment_id
+                feature_config["app_name"] = app_name
+                # Use the registry which handles config-based capabilities
+                if feature_name in self._CAPABILITY_MAP:
+                    factory = self._CAPABILITY_MAP[feature_name]
+                    capability = factory(feature_config) if callable(factory) else factory
+                    self.capabilities.append(capability)
+            else:
+                # Standard capability
+                self.add_capability(feature_name)
         
         # Add custom packages
         if packages:
@@ -500,18 +549,6 @@ class CapabilityManager:
         
         self.capabilities.append(capability)
     
-    def add_buildwatch(self, deployment_id: str, app_name: str) -> None:
-        """Add BuildWatch monitoring capability.
-        
-        BuildWatch is always added FIRST so it can start monitoring immediately.
-        
-        Args:
-            deployment_id: Unique deployment identifier
-            app_name: Application name
-        """
-        buildwatch_cap = BuildWatchCapability(deployment_id, app_name)
-        # Insert at the beginning so it runs first
-        self.capabilities.insert(0, buildwatch_cap)
     
     def assemble_fragments(self) -> CapabilityFragments:
         """Assemble all capability fragments into a single set.
@@ -531,11 +568,15 @@ class CapabilityManager:
         return combined
 
 
-def create_capability_manager(template_data: Dict[str, Any]) -> Optional[CapabilityManager]:
+def create_capability_manager(template_data: Dict[str, Any], 
+                             deployment_id: str = None, 
+                             app_name: str = None) -> Optional[CapabilityManager]:
     """Create a capability manager from template data.
     
     Args:
         template_data: Full template data dictionary
+        deployment_id: Deployment ID for context-aware capabilities
+        app_name: Application name for context-aware capabilities
     
     Returns:
         CapabilityManager if template has capabilities, None otherwise
@@ -545,5 +586,5 @@ def create_capability_manager(template_data: Dict[str, Any]) -> Optional[Capabil
         return None
     
     manager = CapabilityManager()
-    manager.add_from_config(capabilities_config)
+    manager.add_from_config(capabilities_config, deployment_id, app_name)
     return manager

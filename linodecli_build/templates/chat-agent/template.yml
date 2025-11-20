@@ -8,6 +8,8 @@ description: >
 
 capabilities:
   runtime: docker
+  features:
+    - buildwatch
 
 deploy:
   target: linode

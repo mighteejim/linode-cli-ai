@@ -180,6 +180,59 @@ Available features:
 | `redis` | Redis server (auto-started) |
 | `postgresql-14` | PostgreSQL 14 server |
 | `postgresql-15` | PostgreSQL 15 server |
+| `buildwatch` | Container monitoring and issue detection |
+
+## BuildWatch Monitoring
+
+BuildWatch provides real-time Docker container monitoring and issue detection.
+
+### Basic Usage
+
+```yaml
+capabilities:
+  features:
+    - buildwatch
+```
+
+### Configuration Options
+
+```yaml
+capabilities:
+  features:
+    - name: buildwatch
+      config:
+        port: 9090              # HTTP API port (default: 9090)
+        log_retention_days: 7   # Log rotation (default: 7)
+        enable_metrics: true    # Resource metrics (default: true)
+```
+
+### Features
+
+- Real-time Docker event streaming
+- Automatic issue detection (OOM kills, crash loops)
+- HTTP API on port 9090
+- Container lifecycle tracking
+- Resource metrics collection
+
+### API Endpoints
+
+- `http://<instance-ip>:9090/health` - Service health
+- `http://<instance-ip>:9090/status` - Current status
+- `http://<instance-ip>:9090/events` - Recent events
+- `http://<instance-ip>:9090/issues` - Detected issues
+
+### When to Use
+
+- GPU workloads (detect OOM issues)
+- Production deployments (issue alerting)
+- Long-running services (uptime tracking)
+- Development (debugging container issues)
+
+### When to Skip
+
+- Simple test deployments
+- Minimal resource usage requirements
+- No container monitoring needed
 
 ### Custom Packages
 

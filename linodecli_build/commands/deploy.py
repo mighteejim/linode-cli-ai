@@ -124,11 +124,12 @@ def _cmd_deploy(args, config) -> None:
     # Generate deployment_id before creating cloud-init config
     deployment_id = _generate_deployment_id()
 
-    # Create capability manager from template
-    capability_manager = capabilities.create_capability_manager(template.data)
-    
-    # Add BuildWatch monitoring capability
-    capability_manager.add_buildwatch(deployment_id, app_name)
+    # Create capability manager from template with deployment context
+    capability_manager = capabilities.create_capability_manager(
+        template.data,
+        deployment_id=deployment_id,
+        app_name=app_name
+    )
     
     # Get custom setup from template
     setup_cfg = template.data.get("setup", {})

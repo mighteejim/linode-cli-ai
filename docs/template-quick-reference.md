@@ -69,6 +69,7 @@ capabilities:
     - nodejs-18           # Node.js 18
     - redis               # Redis server
     - postgresql-14       # PostgreSQL 14
+    - buildwatch          # Container monitoring
 ```
 
 ### Add Custom Packages

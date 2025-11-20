@@ -12,6 +12,7 @@ capabilities:
     - gpu-nvidia
     - docker-optimize
     - redis
+    - buildwatch
 
 deploy:
   target: linode
