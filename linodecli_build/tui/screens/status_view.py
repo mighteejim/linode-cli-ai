@@ -319,15 +319,6 @@ class StatusViewScreen(Screen):
                     container_panel = self.query_one(ContainerPanel)
                     container_panel.container_data = container
                 
-                # Update header with uptime
-                created = instance.get("created")
-                if created:
-                    # Calculate uptime (simplified)
-                    header_info = self.query_one("#header-info", Static)
-                    header_info.update(
-                        f"Status: {self.app_name} ({self.environment})    Uptime: Running"
-                    )
-                
                 # Update footer with last update time
                 self.last_update = time.time()
                 self.update_footer()
