@@ -137,14 +137,21 @@ class DashboardScreen(Screen):
         self.refresh_table()
         # Start animation timer for blinking status indicators
         self._animation_timer = self.set_interval(0.5, self._animate_status)
+        # Start auto-refresh timer for API updates
+        self._refresh_timer = self.set_interval(3.0, self._auto_refresh_status)
     
     def _animate_status(self):
         """Toggle blink state and refresh table for animation effect."""
         DashboardScreen._blink_state = not DashboardScreen._blink_state
-        # Only refresh if we have deployments with provisioning status
+        # Only refresh if we have deployments with transitional status
         if any(d.get("status", "").lower() in ["provisioning", "booting", "rebooting", "migrating", "busy"] 
                for d in self.deployments):
             self.refresh_table()
+    
+    def _auto_refresh_status(self):
+        """Auto-refresh deployment status from API every 3 seconds."""
+        self.load_deployments()
+        self.refresh_table()
     
     def load_deployments(self):
         """Load all deployments from API."""
@@ -175,13 +182,26 @@ class DashboardScreen(Screen):
         
         # Status mappings with icons and colors
         if status_lower == "running":
+            # Solid green for running instances
             return Text("● running", style="bold green")
-        elif status_lower in ["provisioning", "booting", "rebooting", "migrating", "busy"]:
-            # Blinking yellow indicator for in-progress states
+        elif status_lower == "provisioning":
+            # Blinking yellow for provisioning
             if DashboardScreen._blink_state:
                 return Text("◉ provisioning", style="bold yellow blink")
             else:
                 return Text("◯ provisioning", style="bold yellow")
+        elif status_lower == "booting":
+            # Blinking green for booting
+            if DashboardScreen._blink_state:
+                return Text("◉ booting", style="bold green blink")
+            else:
+                return Text("◯ booting", style="bold green")
+        elif status_lower in ["rebooting", "migrating", "busy"]:
+            # Blinking yellow for other in-progress states
+            if DashboardScreen._blink_state:
+                return Text(f"◉ {status_lower}", style="bold yellow blink")
+            else:
+                return Text(f"◯ {status_lower}", style="bold yellow")
         elif status_lower in ["offline", "stopped"]:
             return Text("○ stopped", style="dim white")
         elif status_lower == "failed":

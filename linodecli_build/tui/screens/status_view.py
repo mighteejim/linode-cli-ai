@@ -131,7 +131,7 @@ class StatusViewScreen(Screen):
         
         # Footer
         yield Static(
-            "Auto-refresh: ON (5s) | Last update: 0 seconds ago",
+            "Auto-refresh: ON (3s) | Last update: 0 seconds ago",
             id="footer-info"
         )
         
@@ -142,7 +142,7 @@ class StatusViewScreen(Screen):
         # Reset scroll position to top
         self.scroll_home(animate=False)
         
-        self.update_task = self.set_interval(5.0, self.update_status)
+        self.update_task = self.set_interval(3.0, self.update_status)
         # Initial update
         await self.update_status()
     
@@ -171,6 +171,14 @@ class StatusViewScreen(Screen):
                 if status == "running":
                     overall_status.update(
                         Text("Overall: ✓ Healthy", style="green bold")
+                    )
+                elif status == "booting":
+                    overall_status.update(
+                        Text("Overall: ⟳ Booting", style="cyan bold")
+                    )
+                elif status == "provisioning":
+                    overall_status.update(
+                        Text("Overall: ⟳ Provisioning", style="yellow bold")
                     )
                 else:
                     overall_status.update(
@@ -261,7 +269,7 @@ class StatusViewScreen(Screen):
         """Update footer with refresh status."""
         footer = self.query_one("#footer-info", Static)
         seconds_ago = int(time.time() - self.last_update)
-        refresh_status = "ON (5s)" if self.auto_refresh else "OFF"
+        refresh_status = "ON (3s)" if self.auto_refresh else "OFF"
         footer.update(
             f"Auto-refresh: {refresh_status} | Last update: {seconds_ago} seconds ago"
         )
