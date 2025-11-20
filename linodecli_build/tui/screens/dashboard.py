@@ -275,6 +275,7 @@ class DashboardScreen(Screen):
     
     def action_view_selected(self):
         """View the selected deployment."""
+        self.notify("DEBUG: action_view_selected called", timeout=2)
         table = self.query_one(DataTable)
         
         if not self.deployments:
@@ -320,6 +321,7 @@ class DashboardScreen(Screen):
     
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         """Handle row selection in the data table (Enter key)."""
+        self.notify("DEBUG: Event handler called", timeout=2)
         # Call the same logic as action_view_selected
         self.action_view_selected()
     
