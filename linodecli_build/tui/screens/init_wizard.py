@@ -93,7 +93,7 @@ class TemplateSelectionScreen(ModalScreen):
     def compose(self):
         with Container(id="modal-container"):
             yield Static(
-                "Step 1/5: Select Template",
+                "🧙 Step 1/5: Select Template",
                 id="header-info"
             )
             
@@ -230,7 +230,7 @@ class RegionSelectionScreen(ModalScreen):
         
         with Container(id="modal-container"):
             yield Static(
-                f"Step 2/5: Select Region | Template: {template_name}",
+                f"🧙 Step 2/5: Select Region | Template: {template_name}",
                 id="header-info"
             )
             
@@ -434,7 +434,7 @@ class PlanSelectionScreen(ModalScreen):
         
         with Container(id="modal-container"):
             yield Static(
-                f"Step 3/5: Select Plan | Template: {template_name} | Region: {region}",
+                f"🧙 Step 3/5: Select Plan | Template: {template_name} | Region: {region}",
                 id="header-info"
             )
             
@@ -671,7 +671,7 @@ class ConfigurationScreen(ModalScreen):
         
         with Container(id="modal-container"):
             yield Static(
-                f"Step 4/5: Configuration | Template: {template_name}",
+                f"🧙 Step 4/5: Configuration | Template: {template_name}",
                 id="header-info"
             )
             
@@ -873,7 +873,7 @@ class ConfirmationScreen(ModalScreen):
     def compose(self):
         with Container(id="modal-container"):
             yield Static(
-                "Step 5/5: Confirmation & Deploy",
+                "🧙 Step 5/5: Confirmation & Deploy",
                 id="header-info"
             )
             
