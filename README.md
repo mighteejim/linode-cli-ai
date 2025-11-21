@@ -99,9 +99,11 @@ That's it! Your LLM API is now running on Linode with GPU support.
 
 ---
 
-## 📺 Interactive TUI
+## 📺 Interactive TUI (Beta)
 
-Monitor deployments in real-time with the interactive Terminal User Interface:
+> **🧪 Beta Feature**: The TUI is currently in beta. While fully functional, you may encounter occasional issues. We welcome feedback and bug reports!
+
+Monitor and manage deployments with the interactive Terminal User Interface:
 
 ```bash
 # Launch the dashboard (shows all deployments)
@@ -117,11 +119,20 @@ linode-cli build tui status --app my-app
 
 ### TUI Features
 
-- 📊 **Dashboard** - Central view of all your deployments
-  - Lists all deployments in current directory
-  - Shows instance IDs and status at a glance
+- 📊 **Interactive Dashboard** - Central view of all your deployments
+  - Lists all deployments with real-time status
+  - Shows instance IDs, regions, and health status
   - Navigate with arrow keys, select with Enter
-  - Auto-discovers deployments in subdirectories
+  - Auto-discovers deployments via Linode API
+  - Press `I` to launch the interactive deployment wizard
+  - Auto-refresh every 3 seconds
+
+- 🧙 **Interactive Wizard** - Deploy in minutes without leaving the TUI *(New!)*
+  - Select from available templates
+  - Choose region and instance type
+  - Configure app name and environment
+  - Initialize and deploy all in one flow
+  - Real-time progress updates
 
 - 🎬 **Live Deployment Monitor** - Watch deployment progress in real-time
   - Progress bar with stage tracking
@@ -140,15 +151,17 @@ linode-cli build tui status --app my-app
 
 | Key | Action |
 |-----|--------|
-| `↑↓` / `j/k` | Navigate (dashboard) |
-| `Enter` | Select deployment (dashboard) |
-| `Esc` / `Ctrl+C` | Exit |
+| `↑↓` / `j/k` | Navigate deployments |
+| `I` | Initialize new deployment (wizard) |
+| `Enter` | View deployment details |
+| `D` | Destroy selected deployment |
 | `R` | Refresh |
-| `S` | Show SSH command (status view) |
-| `D` | Destroy deployment (status view) |
+| `Q` / `Esc` / `Ctrl+C` | Exit |
 | `?` | Show help |
 
-The TUI provides a much richer monitoring experience compared to the CLI, perfect for watching long-running deployments or keeping an eye on production services.
+The TUI provides a much richer experience compared to the CLI, perfect for visual learners, watching long-running deployments, or keeping an eye on production services.
+
+**Note**: All CLI commands remain fully supported. The TUI is an optional, complementary interface.
 
 ---
 
