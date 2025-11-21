@@ -96,14 +96,6 @@ class StatusViewScreen(Screen):
         padding: 0 1;
     }
     
-    #logs-header {
-        height: 1;
-        background: $panel;
-        padding: 0 1;
-        color: $text;
-        text-style: bold;
-    }
-    
     #footer-info {
         height: 1;
         background: $panel;
@@ -212,9 +204,8 @@ class StatusViewScreen(Screen):
                     yield ContainerPanel()
             
             # Logs section - Real-time streaming
-            yield Static("📋 Logs", id="logs-header")
             with Container(id="logs-container"):
-                yield LogViewer(title="Build Monitor Logs")
+                yield LogViewer(title="Logs")
         
         # Footer
         yield Static(

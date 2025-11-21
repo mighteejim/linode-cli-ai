@@ -38,7 +38,7 @@ Horizontal {
 
 /* Panels */
 InstancePanel {
-    border: solid $primary;
+    border: round $primary;
     background: $panel;
     padding: 1;
     margin: 1;
@@ -46,7 +46,7 @@ InstancePanel {
 }
 
 ContainerPanel {
-    border: solid $secondary;
+    border: round $secondary;
     background: $panel;
     padding: 1;
     margin: 1;
@@ -55,16 +55,17 @@ ContainerPanel {
 
 /* Log Viewer */
 LogViewer {
-    border: solid $accent;
     background: $surface;
-    height: 15;
-    margin: 1;
+    height: 1fr;
+    margin: 0;
+    padding: 0;
 }
 
 LogViewer RichLog {
     background: $surface;
-    border: none;
-    padding: 1;
+    border: round $accent;
+    padding: 0 1;
+    height: 1fr;
 }
 
 /* Progress Widget */
