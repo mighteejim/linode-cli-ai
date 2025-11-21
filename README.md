@@ -336,13 +336,3 @@ Documentation PRs are always welcome!
 [Apache 2.0](LICENSE)
 
 ---
-
-## 🙏 Acknowledgments
-
-Built with ❤️ for the AI and cloud computing community.
-
-Powered by [Linode](https://www.linode.com/) cloud infrastructure.
-
----
-
-**Ready to deploy?** Start with `linode-cli build templates list` and see what you can build! 🚀
