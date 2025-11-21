@@ -1,5 +1,28 @@
 # Capabilities Reference
 
+Complete reference for all capabilities available in `linode-cli build`.
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [How Capabilities Work](#how-capabilities-work)
+3. [Runtime Capabilities](#runtime-capabilities)
+   - [Docker Runtime](#docker-runtime)
+   - [Native Runtime](#native-runtime)
+4. [Feature Capabilities](#feature-capabilities)
+   - [GPU Support (NVIDIA)](#gpu-support-nvidia)
+   - [Docker Optimization](#docker-optimization)
+   - [Python Runtimes](#python-runtimes)
+   - [Node.js Runtimes](#nodejs-runtimes)
+   - [Redis](#redis)
+   - [PostgreSQL](#postgresql)
+   - [BuildWatch Container Monitoring](#buildwatch-container-monitoring)
+5. [Custom Packages](#custom-packages)
+6. [Combining Capabilities](#combining-capabilities)
+7. [Advanced Usage](#advanced-usage)
+
+---
+
 ## Overview
 
 **Capabilities** are declarative infrastructure components that templates use to specify what they need. Instead of writing shell scripts, you simply declare capabilities like `gpu-nvidia`, `redis`, or `buildwatch`, and the system handles the installation and configuration automatically.
