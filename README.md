@@ -306,7 +306,6 @@ Customize once, deploy anywhere!
 - **[Template Development Guide](docs/template-development.md)** - Create custom templates
 - **[Template Deployment Guide](docs/template-deployments.md)** - Deep dive into deployments
 - **[Quick Reference](docs/template-quick-reference.md)** - Common patterns and examples
-- **[Community Templates](https://github.com/linode/linode-cli-ai-templates)** - Browse and contribute
 
 ---
 
