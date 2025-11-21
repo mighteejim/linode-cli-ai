@@ -1,6 +1,6 @@
-# Linode CLI AI Architecture & Developer Guide
+# Linode CLI Build Architecture & Developer Guide
 
-> **Purpose**: This document provides a comprehensive overview of the linode-cli-ai build system architecture, designed to help LLM agents and developers understand how the system works.
+> **Purpose**: This document provides a comprehensive overview of the linode-cli build system architecture, designed to help LLM agents and developers understand how the system works.
 
 ## Table of Contents
 
@@ -22,7 +22,7 @@
 
 ### What It Does
 
-linode-cli-ai is a **declarative deployment system** for AI/ML workloads on Linode cloud infrastructure. It:
+linode-cli build is a **declarative deployment system** for AI/ML workloads on Linode cloud infrastructure. It:
 
 - Deploys containerized AI services (LLMs, ML pipelines, embeddings, etc.)
 - Manages infrastructure requirements declaratively (GPU, Docker, databases, etc.)
@@ -54,7 +54,7 @@ The system follows a **template-driven, capability-based** architecture:
 ## Project Structure
 
 ```
-linode-cli-ai/
+linode-cli-build/
 ├── linodecli_build/              # Main package
 │   ├── __init__.py
 │   ├── commands/                 # Command implementations
