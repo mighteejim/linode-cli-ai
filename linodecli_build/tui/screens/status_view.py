@@ -74,7 +74,6 @@ class StatusViewScreen(Screen):
     
     #panels-container {
         height: auto;
-        max-height: 12;
         padding: 0;
     }
     
