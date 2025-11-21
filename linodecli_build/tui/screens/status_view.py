@@ -76,6 +76,7 @@ class StatusViewScreen(Screen):
         height: auto;
         max-height: 12;
         padding: 0;
+        margin-bottom: 1;
     }
     
     #instance-container {
@@ -94,7 +95,6 @@ class StatusViewScreen(Screen):
         height: 1fr;
         min-height: 20;
         padding: 0 1;
-        margin-top: 1;
     }
     
     #footer-info {
