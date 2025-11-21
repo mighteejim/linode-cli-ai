@@ -33,3 +33,13 @@ Dockerfile.debug
 # Project-specific
 linode-root-password.txt
 ai-deployments.json
+
+# Security - never commit these
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.token
+*secret*
+*credentials*
